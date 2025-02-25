@@ -10,8 +10,16 @@ MIT students can access course videos, assignments, and the full syllabus on the
 
 This repository uses [pixi](https://github.com/prefix-dev/pixi) for environment management. To get started:
 
-1. Run `scripts/bootstrap-env.sh` to install pixi and create the Python virtual environment
-2. Restart your terminal (or re-source your shell config) to ensure pixi is on your PATH
+
+1. Clone and navigate to the repository:
+
+```bash
+git clone https://github.com/ChiSym/9.s916-course-materials.git
+cd 9.s916-course-materials
+```
+
+2. Run `scripts/bootstrap-env.sh` to install pixi and create the Python virtual environment
+3. Restart your terminal (or re-source your shell config) to ensure pixi is on your PATH
 
 ### IDE Setup
 
