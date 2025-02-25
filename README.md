@@ -2,6 +2,10 @@
 
 This repository contains the course materials for 9.s916, a course on probabilistic programming and Bayesian methods taught by Vikash Mansinghka at MIT.
 
+## Course Resources
+
+MIT students can access course videos, assignments, and the full syllabus on the [course Canvas page](https://canvas.mit.edu/courses/32225).
+
 ## Setup
 
 This repository uses [pixi](https://github.com/prefix-dev/pixi) for environment management. To get started:
