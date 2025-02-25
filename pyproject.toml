@@ -6,7 +6,7 @@ authors = [
 name = "localization-tutorial"
 requires-python = ">= 3.11"
 version = "0.1.0"
-dependencies = ["genstudio>=2025.2.2,<2026", "genjax==0.9.1"]
+dependencies = ["genstudio>=2025.2.3,<2026", "genjax==0.9.1"]
 
 [build-system]
 build-backend = "hatchling.build"
