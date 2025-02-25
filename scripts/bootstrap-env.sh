@@ -57,12 +57,6 @@ install-pixi-global() {
     git gh coverage pdoc pre-commit ruff
 }
 
-# Authenticate gcloud
-authenticate-gcloud() {
-  info "Authenticating gcloud..."
-  gcloud auth login --update-adc --force || error_exit "Failed to authenticate gcloud."
-}
-
 # Configure git
 configure-git() {
   info "Checking git configuration..."
@@ -101,8 +95,8 @@ clone-repo() {
   read -p "Enter the branch name to activate [main]: " BRANCH_NAME
   BRANCH_NAME=${BRANCH_NAME:-main}
   echo "Activating branch: $BRANCH_NAME"
-  gh repo clone chisym/localization-tutorial || error_exit "Failed to clone repository."
-  pushd localization-tutorial || error_exit "Failed to enter directory."
+  gh repo clone ChiSym/9.s916-course-materials || error_exit "Failed to clone repository."
+  pushd 9.s916-course-materials || error_exit "Failed to enter directory."
   git checkout "$BRANCH_NAME" || error_exit "Failed to checkout branch $BRANCH_NAME"
   popd
 }
@@ -155,7 +149,7 @@ install() {
   authenticate-github
   if [[ $flag == "clone" ]]; then
     clone-repo
-    cd localization-tutorial
+    cd 9.s916-course-materials
   fi
   pre-commit-install-hooks
   update-dependencies

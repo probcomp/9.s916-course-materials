@@ -1,6 +1,6 @@
 [project]
 authors = [
-    {name = "Aaron Steele", email = "aaron@chi-fro.org"},
+    {name = "Jay Pottharst", email = "jay@chi-fro.org"},
     {name = "Vikash Mansinghka", email = "vkm@chi-fro.org"},
 ]
 name = "localization-tutorial"

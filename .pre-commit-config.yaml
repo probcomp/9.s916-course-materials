@@ -26,11 +26,9 @@ repos:
       - id: ruff
         types_or: [ python, pyi, jupyter ]
         args: [ --fix ]
-        exclude: 'src/localization-tutorial\.*'
 
       - id: ruff-format
         types_or: [ python, pyi, jupyter ]
-        exclude: 'src/localization-tutorial\.*'
 
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.369
