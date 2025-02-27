@@ -47,7 +47,15 @@ The tutorial demonstrates:
 - Visualizing robot paths and particle distributions
 - Working with probabilistic programming concepts in JAX/Gen
 
-The notebook can be run interactively using JupyterLab or any Jupyter-compatible editor.
+The notebook can be run interactively using JupyterLab or any Jupyter-compatible editor:
+
+```bash
+# Run JupyterLab on CPU
+pixi run lab
+
+# Run JupyterLab on GPU
+pixi run -e gpu lab
+```
 
 # License
 
