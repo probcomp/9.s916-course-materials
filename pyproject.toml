@@ -28,7 +28,7 @@ gpu = { features = ["cuda"], solve-group = "default" }
 localization_tutorial = { path = ".", editable = true }
 
 [tool.pixi.tasks]
-lab = "jupyter lab src/localization-tutorial.ipynb" 
+lab = "jupyter lab src/localization-tutorial.ipynb"
 
 [tool.pixi.dependencies]
 jupytext = ">=1.16.7,<2"
