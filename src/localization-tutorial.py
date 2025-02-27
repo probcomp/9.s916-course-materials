@@ -772,23 +772,23 @@ some_poses = jax.vmap(lambda k: whole_map_prior.simulate(k, ()))(jax.random.spli
     + {"title": "Some poses"}
 )
 
-
 # %%
 # Even mixture of uniform priors over two rooms.
-@genjax.gen
-def two_room_prior():
-    flip = genjax.flip(0.5) @ "flip"
-    mins, maxes = jnp.where(
-        flip,
-        jnp.array([[12.83, 11.19, -jnp.pi], [15.81, 15.26, +jnp.pi]]),
-        jnp.array([[15.73, 5.79, -jnp.pi], [18.9, 9.57, +jnp.pi]])
-    )
-    return uniform_pose(mins, maxes) @ "uniform"
 
-# The two rooms are disjoint so the flip is deterministic.
-# The posterior density is incorrect by a *constant* factor of 1/2.
+room_mixture = jnp.ones(2)
+room1 = jnp.array([[12.83, 15.81], [11.19, 15.26], [-jnp.pi, +jnp.pi]])
+room2 = jnp.array([[15.73, 18.90], [ 5.79,  9.57], [-jnp.pi, +jnp.pi]])
+
+two_room_prior = genjax.mix(
+    uniform_pose.partial_apply(room1[:, 0], room1[:, 1]),
+    uniform_pose.partial_apply(room2[:, 0], room2[:, 1])
+).partial_apply(jnp.log(room_mixture), (), ())
+
 def two_room_cm_builder(pose):
-    return C["flip"].set(jnp.array(pose.p[1] > 10.0)) | C["uniform", "p_array"].set(pose.as_array())
+    return (
+        C["mixture_component"].set(jnp.array(pose.p[1] < 10.0, int))
+        | C["component_sample", "p_array"].set(pose.as_array())
+    )
 
 
 # %%
