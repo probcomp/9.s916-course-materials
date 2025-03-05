@@ -775,7 +775,7 @@ some_poses = jax.vmap(lambda k: whole_map_prior.simulate(k, ()))(jax.random.spli
 # %%
 # Even mixture of uniform priors over two rooms.
 
-room_mixture = jnp.ones(2)
+room_mixture = jnp.ones(2) / 2
 room1 = jnp.array([[12.83, 15.81], [11.19, 15.26], [-jnp.pi, +jnp.pi]])
 room2 = jnp.array([[15.73, 18.90], [ 5.79,  9.57], [-jnp.pi, +jnp.pi]])
 
