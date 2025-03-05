@@ -1040,7 +1040,7 @@ def grid_approximation_handler(widget, k, readings):
     grid_poses = make_poses_grid(world["bounding_box"], N_grid)
     posterior_densities = jax.vmap(jitted_posterior)(grid_poses)
     def grid_sample_one(k):
-        return grid_poses[genjax.categorical.sample(k, posterior_densities)]
+        return grid_poses[genjax.categorical.propose(k, (posterior_densities,))[2]]
 
     grid_samples = jax.vmap(grid_sample_one)(jax.random.split(k, N_samples))
     widget.state.update({
@@ -1082,7 +1082,7 @@ def importance_resampling_handler(widget, k, readings):
         k1, k2 = jax.random.split(k)
         presamples = jax.vmap(random_pose)(jax.random.split(k1, N_presamples))
         posterior_densities = jax.vmap(jitted_posterior)(presamples)
-        return presamples[genjax.categorical.sample(k2, posterior_densities)]
+        return presamples[genjax.categorical.propose(k2, (posterior_densities,))[2]]
 
     grid_samples = jax.vmap(importance_resample_one)(jax.random.split(k, N_samples))
     widget.state.update({
@@ -1125,7 +1125,7 @@ def MCMC_handler(widget, k, readings):
         new_p_hd = jax.random.uniform(k1, shape=(3,), minval=mins, maxval=maxs)
         new_pose = Pose(new_p_hd[0:2], new_p_hd[2])
         new_posterior = jitted_posterior(new_pose)
-        accept = (jnp.log(genjax.uniform.sample(k2)) <= new_posterior - posterior_density)
+        accept = (jnp.log(genjax.uniform.propose(k2, ())[2]) <= new_posterior - posterior_density)
         return (
             jax.tree.map(
                 lambda x, y: jnp.where(accept, x, y),
@@ -2039,9 +2039,9 @@ def importance_sample(
     samples, log_weights = jax.vmap(model_importance, in_axes=(0, None, None))(
         jax.random.split(key1, N * K), constraints, (motion_settings, s_noise)
     )
-    winners = jax.vmap(genjax.categorical.sampler)(
-        jax.random.split(key2, K), jnp.reshape(log_weights, (K, N))
-    )
+    winners = jax.vmap(genjax.categorical.propose)(
+        jax.random.split(key2, K), (jnp.reshape(log_weights, (K, N)),)
+    )[2]
     # indices returned are relative to the start of the K-segment from which they were drawn.
     # globalize the indices by adding back the index of the start of each segment.
     winners += jnp.arange(0, N * K, N)
@@ -2241,9 +2241,9 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
             samples, log_weight_increments = jax.vmap(self.importance, in_axes=(0, 0, None, None))(
                 ks[0], particles, control, observation
             )
-            indices = jax.vmap(genjax.categorical.sampler, in_axes=(0, None))(
-                ks[1], log_weights + log_weight_increments
-            )
+            indices = jax.vmap(genjax.categorical.propose, in_axes=(0, None))(
+                ks[1], (log_weights + log_weight_increments,)
+            )[2]
             (resamples, antecedents) = jax.tree.map(lambda v: v[indices], (samples, particles))
             if self.rejuvenate:
                 rejuvenated, new_log_weights = jax.vmap(self.rejuvenate, in_axes=(0, 0, 0, None, None))(
