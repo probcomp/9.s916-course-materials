@@ -1464,14 +1464,22 @@ def update_confidence_circle(widget, _):
 # Thus `path_model` returns a tuple whose second entry is the sampled path (and whose first entry duplicates the final position).
 
 # %%
-path_model = step_model.partial_apply(default_motion_settings).map(diag).scan()
+@genjax.gen
+def path_model(motion_settings):
+    return (
+        step_model
+        .partial_apply(motion_settings)
+        .map(diag)
+        .scan()(robot_inputs["start"], robot_inputs["controls"])
+        @ "steps"
+    )
 
 # %% [markdown]
 # Note how the model returns a tuple with the terminus of the sampled path, followed by the path itself vectorized into a single `Pose` object.
 
 # %%
 key, sub_key = jax.random.split(key)
-path_model.propose(sub_key, (robot_inputs["start"], robot_inputs["controls"]))[2]
+path_model.propose(sub_key, (default_motion_settings,))[2]
 
 
 # %% [markdown]
@@ -1492,7 +1500,7 @@ def plot_path_with_confidence(path, step):
     )
 
 key, sample_key = jax.random.split(key)
-path = path_model.propose(sample_key, (robot_inputs["start"], robot_inputs["controls"]))[2][1]
+path = path_model.propose(sample_key, (default_motion_settings,))[2][1]
 Plot.Frames(
     [
         plot_path_with_confidence(path, step)
@@ -1511,7 +1519,7 @@ N_samples = 12
 key, sub_key = jax.random.split(key)
 sample_paths = jax.vmap(
     lambda k:
-        path_model.propose(k, (robot_inputs["start"], robot_inputs["controls"]))[2][1]
+        path_model.propose(k, (default_motion_settings,))[2][1]
 )(jax.random.split(sub_key, N_samples))
 
 Plot.html([
@@ -1668,9 +1676,9 @@ rotated_trace, rotated_trace_weight_diff, _, _ = trace.update(
 # It is worth carefully thinking through a trickier instance of this.  Suppose instead, within the full path, we replaced the first step's stochastic choice of heading with some specific value.
 # %%
 key, k1, k2 = jax.random.split(key, 3)
-trace = path_model.simulate(k1, (robot_inputs["start"], robot_inputs["controls"]))
+trace = path_model.simulate(k1, (default_motion_settings,))
 rotated_first_step, rotated_first_step_weight_diff, _, _ = trace.update(
-    k2, C[0, "hd"].set(jnp.pi / 2)
+    k2, C["steps", 0, "hd"].set(jnp.pi / 2)
 )
 
 # %% [markdown]

@@ -726,7 +726,15 @@ def step_model(motion_settings, start, control):
 degrees = jnp.pi / 180
 default_motion_settings = {"p_noise": 0.5, "hd_noise": 10 * degrees}
 
-path_model = step_model.partial_apply(default_motion_settings).map(diag).scan()
+@genjax.gen
+def path_model(motion_settings):
+    return (
+        step_model
+        .partial_apply(motion_settings)
+        .map(diag)
+        .scan()(robot_inputs["start"], robot_inputs["controls"])
+        @ "steps"
+    )
 
 def confidence_circle(p, p_noise):
     return Plot.ellipse(
@@ -1551,7 +1559,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # Path model
 
 # key, sample_key = jax.random.split(key)
-# path = path_model.propose(sample_key, (robot_inputs["start"], robot_inputs["controls"]))[2][1]
+# path = path_model.propose(sample_key, (default_motion_settings,))[2][1]
 # Plot.Frames(
 #     [
 #         plot_path_with_confidence(path, step)
@@ -1565,7 +1573,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # key, sub_key = jax.random.split(key)
 # sample_paths = jax.vmap(
 #     lambda k:
-#         path_model.propose(k, (robot_inputs["start"], robot_inputs["controls"]))[2][1]
+#         path_model.propose(k, (default_motion_settings,))[2][1]
 # )(jax.random.split(sub_key, N_samples))
 # Plot.html([
 #     "div.grid.grid-cols-2.gap-4",
@@ -1604,9 +1612,9 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 # key, k1, k2 = jax.random.split(key, 3)
-# trace = path_model.simulate(k1, (robot_inputs["start"], robot_inputs["controls"]))
+# trace = path_model.simulate(k1, (default_motion_settings,))
 # rotated_first_step, rotated_first_step_weight_diff, _, _ = trace.update(
-#     k2, C[0, "hd"].set(jnp.pi / 2)
+#     k2, C["steps", 0, "hd"].set(jnp.pi / 2)
 # )
 # (
 #     world_plot
