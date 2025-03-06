@@ -1864,11 +1864,10 @@ def constraint_from_path(path):
     c_ps = jax.vmap(lambda ix, p: C["steps", ix, "pose", "p"].set(p))(
         jnp.arange(T), path.p
     )
-
     c_hds = jax.vmap(lambda ix, hd: C["steps", ix, "pose", "hd"].set(hd))(
         jnp.arange(T), path.hd
     )
-    return c_ps + c_hds
+    return c_ps | c_hds
 
 constraints_path_integrated = constraint_from_path(path_integrated)
 constraints_path_integrated_observations_low_deviation = (

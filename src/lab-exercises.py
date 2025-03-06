@@ -783,14 +783,6 @@ def full_model(motion_settings, s_noise):
         @ "steps"
     )
 
-def animate_full_trace(trace, frame_key=None):
-    path = get_path(trace)
-    readings = get_sensors(trace)
-    motion_settings = trace.get_args()[0]
-    return animate_path_and_sensors(
-        path, readings, motion_settings, frame_key=frame_key
-    )
-
 
 # THE DATA
 
@@ -813,6 +805,23 @@ def get_path(trace):
 
 def get_sensors(trace):
     return trace.get_choices()["steps", "sensor", "distance"]
+
+def animate_full_trace(trace, frame_key=None):
+    path = get_path(trace)
+    readings = get_sensors(trace)
+    motion_settings = trace.get_args()[0]
+    return animate_path_and_sensors(
+        path, readings, motion_settings, frame_key=frame_key
+    )
+
+def constraint_from_path(path):
+    c_ps = jax.vmap(lambda ix, p: C["steps", ix, "pose", "p"].set(p))(
+        jnp.arange(T), path.p
+    )
+    c_hds = jax.vmap(lambda ix, hd: C["steps", ix, "pose", "hd"].set(hd))(
+        jnp.arange(T), path.hd
+    )
+    return c_ps | c_hds
 
 path_low_deviation = get_path(trace_low_deviation)
 path_high_deviation = get_path(trace_high_deviation)
