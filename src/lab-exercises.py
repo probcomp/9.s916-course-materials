@@ -723,7 +723,8 @@ def step_model(motion_settings, start, control):
     hd = genjax.normal(start.hd + control.dhd, motion_settings["hd_noise"]) @ "hd"
     return physical_step(start.p, p, hd)
 
-default_motion_settings = {"p_noise": 0.5, "hd_noise": 2 * jnp.pi / 36.0}
+degrees = jnp.pi / 180
+default_motion_settings = {"p_noise": 0.5, "hd_noise": 10.0 * degrees}
 
 path_model = step_model.partial_apply(default_motion_settings).map(diag).scan()
 
@@ -787,11 +788,11 @@ def animate_full_trace(trace, frame_key=None):
 
 motion_settings_low_deviation = {
     "p_noise": 0.05,
-    "hd_noise": (1 / 10.0) * 2 * jnp.pi / 360,
+    "hd_noise": (1 / 10.0) * degrees,
 }
 motion_settings_high_deviation = {
     "p_noise": 0.25,
-    "hd_noise": 2 * jnp.pi / 360,
+    "hd_noise": 1.0 * degrees,
 }
 
 key = jax.random.key(0)
@@ -1692,7 +1693,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # SMCP3
 
 # N_particles = 100
-# M_grid = jnp.array([0.5, 0.5, jnp.pi/600.0])
+# M_grid = jnp.array([0.5, 0.5, (3.0 / 10.0) * degrees])
 # N_grid = jnp.array([15, 15, 15])
 # key, sub_key = jax.random.split(key)
 # sis_result = localization_sis(
