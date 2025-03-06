@@ -33,7 +33,7 @@
 #
 # Dependencies are specified in pyproject.toml.
 # %%
-# Global setup code
+# Global includes
 
 import json
 import genstudio.plot as Plot
@@ -142,7 +142,7 @@ def load_world(file_name):
 # %%
 # Specific example code here
 
-world = load_world("world.json");
+world = load_world("world.json")
 
 # %% [markdown]
 # ### Plotting
@@ -240,7 +240,7 @@ class Pose(genjax.PythonicPytree):
 
 # %%
 def pose_wings(pose, opts={}):
-    return Plot.line(js(f"""
+    return Plot.line(js("""
                    const pose = %1;
                    let positions = pose.p;
                    let angles = pose.hd;
@@ -270,7 +270,7 @@ def pose_wings(pose, opts={}):
                 **opts)
 
 def pose_body(pose, opts={}):
-    return Plot.dot(js(f"typeof %1.hd === 'number' ? [%1.p] : %1.p", pose), {"r": 4} | opts)
+    return Plot.dot(js("typeof %1.hd === 'number' ? [%1.p] : %1.p", pose), {"r": 4} | opts)
 
 def pose_plots(poses, wing_opts={}, body_opts={}, **opts):
     """
@@ -370,9 +370,9 @@ def distance(p, seg, PARALLEL_TOL=1.0e-6):
         jnp.abs(det) < PARALLEL_TOL,
         jnp.array([jnp.nan, jnp.nan]),
         jnp.array([
-            (segdp[0] * pq[1] - segdp[1] * pq[0]) / det,
-            (pdp[0] * pq[1] - pdp[1] * pq[0]) / det
-        ])
+            segdp[0] * pq[1] - segdp[1] * pq[0],
+              pdp[0] * pq[1] -   pdp[1] * pq[0]
+        ]) / det
     )
     return jnp.where(
         (st[0] >= 0.0) & (st[1] >= 0.0) & (st[1] <= 1.0),
@@ -440,8 +440,6 @@ def update_ideal_sensors(widget, label):
         (label + "_readings"): ideal_sensor(pose_at(widget.state, label))
     })
 
-def on_pose_change(widget, _):
-    update_ideal_sensors(widget, "pose")
 
 (
     (
@@ -453,7 +451,9 @@ def on_pose_change(widget, _):
     | Plot.initialState({
         "pose_readings": ideal_sensor(some_pose)
     })
-    | Plot.onChange({"pose": on_pose_change})
+    | Plot.onChange({
+        "pose": lambda widget, _: update_ideal_sensors(widget, "pose")
+    })
 )
 
 # %% [markdown]
@@ -1180,7 +1180,6 @@ def load_robot_program(file_name):
     Returns:
     - tuple: A tuple containing the initial state, and the total number of control steps.
     """
-    # TODO: change these to urlopen when the repo becomes public
     robot_program = load_file(file_name)
 
     start = Pose(
@@ -2305,9 +2304,6 @@ observations_high_deviation = get_sensors(trace_high_deviation)
 # %%
 N_particles = 100
 
-def pose_list_to_plural_pose(pl: list[Pose]) -> Pose:
-    return Pose(jnp.array([pose.p for pose in pl]), [pose.hd for pose in pl])
-
 key, sub_key = jax.random.split(key)
 smc_result = localization_sis(
     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
@@ -2318,8 +2314,12 @@ def plot_sis_result(ground_truth, smc_result):
         world_plot
         + path_to_polyline(ground_truth, stroke="blue", strokeWidth=2)
         + [
-            path_to_polyline(pose_list_to_plural_pose(p), opacity=0.1, stroke="green")
-            for p in smc_result.flood_fill()
+            path_to_polyline(
+                Pose(jnp.array([pose.p for pose in poses]), [pose.hd for pose in poses]),
+                opacity=0.1,
+                stroke="green"
+            )
+            for poses in smc_result.flood_fill()
         ]
     )
 
