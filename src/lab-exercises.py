@@ -996,7 +996,7 @@ def localization_sis(motion_settings, s_noise, observations):
         ),
     )
 
-def plot_sis_result(ground_truth, smc_result):
+def plot_sis_result(ground_truth, sis_result):
     return (
         world_plot
         + path_to_polyline(ground_truth, stroke="blue", strokeWidth=2)
@@ -1006,7 +1006,7 @@ def plot_sis_result(ground_truth, smc_result):
                 opacity=0.1,
                 stroke="green"
             )
-            for poses in smc_result.flood_fill()
+            for poses in sis_result.flood_fill()
         ]
     )
 
@@ -1676,17 +1676,17 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # N_particles = 100
 # key, sub_key = jax.random.split(key)
-# smc_result = localization_sis(
+# sis_result = localization_sis(
 #     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
 # ).run(sub_key, N_particles)
-# plot_sis_result(path_high_deviation, smc_result)
+# plot_sis_result(path_high_deviation, sis_result)
 
 # N_particles = 20
 # key, sub_key = jax.random.split(key)
-# low_smc_result = localization_sis(
+# smc_result = localization_sis(
 #     motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
 # ).run(sub_key, N_particles)
-# plot_sis_result(path_low_deviation, low_smc_result)
+# plot_sis_result(path_low_deviation, smc_result)
 
 
 # SMCP3
@@ -1695,10 +1695,18 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # M_grid = jnp.array([0.5, 0.5, jnp.pi/600.0])
 # N_grid = jnp.array([15, 15, 15])
 # key, sub_key = jax.random.split(key)
-# smc_result = localization_sis_plus_grid_rejuv(
-#     motion_settings_high_deviation, sensor_settings["s_noise"], M_grid, N_grid, observations_high_deviation
-# ).run(sub_key, N_particles)
-# imp_result = localization_sis(
+# sis_result = localization_sis(
 #     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
 # ).run(sub_key, N_particles)
-# plot_sis_result(path_high_deviation, smc_result) | plot_sis_result(path_high_deviation, imp_result)
+# smcp3_result = localization_sis_plus_grid_rejuv(
+#     motion_settings_high_deviation, sensor_settings["s_noise"], M_grid, N_grid, observations_high_deviation
+# ).run(sub_key, N_particles)
+# (
+#     (
+#         html(["div", ["p", "SIS per se (no rejuvenation)"], ["p", "high motion-deviation data"]])
+#         | plot_sis_result(path_high_deviation, sis_result)
+#     ) & (
+#         html(["div", ["p", "SIS with SMCP3 grid rejuvenation"], ["p", "high motion-deviation data"]])
+#         | plot_sis_result(path_high_deviation, smcp3_result)
+#     )
+# )
