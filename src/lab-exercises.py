@@ -1691,19 +1691,24 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # Sequential importance resampling
 
+# key, k1, k2 = jax.random.split(key, 3)
 # N_particles = 100
-# key, sub_key = jax.random.split(key)
 # sis_result = localization_sis(
 #     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
-# ).run(sub_key, N_particles)
-# plot_sis_result(path_high_deviation, sis_result)
-
+# ).run(k1, N_particles)
 # N_particles = 20
-# key, sub_key = jax.random.split(key)
-# smc_result = localization_sis(
+# sis_result = localization_sis(
 #     motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
-# ).run(sub_key, N_particles)
-# plot_sis_result(path_low_deviation, smc_result)
+# ).run(k2, N_particles)
+# (
+#     (
+#         html(["div", "SIS on high motion-deviation data"])
+#         | plot_sis_result(path_high_deviation, sis_result)
+#     ) & (
+#         html(["div", "SIS on low motion-deviation data"])
+#         | plot_sis_result(path_low_deviation, sis_result)
+#     )
+# )
 
 
 # SMCP3

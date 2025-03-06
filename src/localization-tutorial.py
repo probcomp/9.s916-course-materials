@@ -1877,15 +1877,14 @@ constraints_path_integrated_observations_high_deviation = (
     constraints_path_integrated | constraints_high_deviation
 )
 
-key, sub_key = jax.random.split(key)
+key, k1, k2 = jax.random.split(key, 3)
 trace_path_integrated_observations_low_deviation, w_low = full_model.importance(
-    sub_key,
+    k1,
     constraints_path_integrated_observations_low_deviation,
     (motion_settings_low_deviation, sensor_settings["s_noise"]),
 )
-key, sub_key = jax.random.split(key)
 trace_path_integrated_observations_high_deviation, w_high = full_model.importance(
-    sub_key,
+    k2,
     constraints_path_integrated_observations_high_deviation,
     (motion_settings_high_deviation, sensor_settings["s_noise"]),
 )
@@ -1918,20 +1917,18 @@ Plot.Row(*[
 # %%
 N_samples = 200
 
-key, sub_key = jax.random.split(key)
-
+key, k1, k2 = jax.random.split(key, 3)
 traces_generated_low_deviation, low_weights = jax.vmap(
     full_model.importance, in_axes=(0, None, None)
 )(
-    jax.random.split(sub_key, N_samples),
+    jax.random.split(k1, N_samples),
     constraints_low_deviation,
     (motion_settings_low_deviation, sensor_settings["s_noise"]),
 )
-
 traces_generated_high_deviation, high_weights = jax.vmap(
     full_model.importance, in_axes=(0, None, None)
 )(
-    jax.random.split(sub_key, N_samples),
+    jax.random.split(k2, N_samples),
     constraints_high_deviation,
     (motion_settings_high_deviation, sensor_settings["s_noise"]),
 )
@@ -2322,29 +2319,26 @@ def plot_sis_result(ground_truth, sis_result):
     )
 
 # %%
-N_particles = 100
+key, k1, k2 = jax.random.split(key, 3)
 
-key, sub_key = jax.random.split(key)
+N_particles = 100
 sis_result = localization_sis(
     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
-).run(sub_key, N_particles)
+).run(k1, N_particles)
 
-(
-    html(["div", "SIS on high motion-deviation path"])
-    | plot_sis_result(path_high_deviation, sis_result)
-)
-
-# %%
 N_particles = 20
-
-key, sub_key = jax.random.split(key)
-low_sis_result = localization_sis(
+sis_result = localization_sis(
     motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
-).run(sub_key, N_particles)
+).run(k2, N_particles)
 
 (
-    html(["div", "SIS on low motion-deviation path"])
-    | plot_sis_result(path_low_deviation, low_sis_result)
+    (
+        html(["div", "SIS on high motion-deviation data"])
+        | plot_sis_result(path_high_deviation, sis_result)
+    ) & (
+        html(["div", "SIS on low motion-deviation data"])
+        | plot_sis_result(path_low_deviation, sis_result)
+    )
 )
 
 # %% [markdown]
@@ -2447,13 +2441,13 @@ N_particles = 100
 M_grid = jnp.array([0.5, 0.5, (3 / 10) * degrees])
 N_grid = jnp.array([15, 15, 15])
 
-key, sub_key = jax.random.split(key)
+key, k1, k2 = jax.random.split(key, 3)
 sis_result = localization_sis(
     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
-).run(sub_key, N_particles)
+).run(k1, N_particles)
 smcp3_result = localization_sis_plus_grid_rejuv(
     motion_settings_high_deviation, sensor_settings["s_noise"], M_grid, N_grid, observations_high_deviation
-).run(sub_key, N_particles)
+).run(k2, N_particles)
 
 (
     (
