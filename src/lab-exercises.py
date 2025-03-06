@@ -530,26 +530,20 @@ def camera_widget(
         | noise_slider("model_noise", "Model/inference noise = ", sensor_settings["s_noise"])
         | (
             Plot.html([
-                "div",
-                {"class": "flex flex-col gap-4"},
-                [
-                    "button",
-                    {
-                        "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
-                        "onClick": on_camera_button(button_handler)
-                    },
-                    button_label
-                ]
+                "button",
+                {
+                    "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
+                    "onClick": on_camera_button(button_handler)
+                },
+                button_label
             ])
-            & Plot.html([
-                "div",
+            & Plot.html(
                 Plot.js("""`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`""")
-            ])
-            & Plot.html([
-                "div",
+            )
+            & Plot.html(
                 Plot.js("""$state.target_exists ?
                                 `target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
-            ])
+            )
             & bottom_elements
         )
         | Plot.initialState(
@@ -1267,21 +1261,17 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #     | noise_slider("noise_slider", "Sensor noise =", sensor_settings["s_noise"])
 #     | (
 #         Plot.html([
-#             "div",
-#             {"class": "flex flex-col gap-4"},
+#             "label",
+#             {"class": "flex items-center gap-2 cursor-pointer"},
 #             [
-#                 "label",
-#                 {"class": "flex items-center gap-2 cursor-pointer"},
-#                 [
-#                     "input",
-#                     {
-#                         "type": "checkbox",
-#                         "checked": js("$state.show_target_pose"),
-#                         "onChange": js("(e) => $state.show_target_pose = e.target.checked")
-#                     }
-#                 ],
-#                 "show target pose"
-#             ]
+#                 "input",
+#                 {
+#                     "type": "checkbox",
+#                     "checked": js("$state.show_target_pose"),
+#                     "onChange": js("(e) => $state.show_target_pose = e.target.checked")
+#                 }
+#             ],
+#             "show target pose"
 #         ])
 #         & Plot.html(js("`guess = Pose([${$state.guess.p.map((x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"))
 #         & Plot.html(js("`target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"))
@@ -1355,12 +1345,11 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #         + pose_plots(js("$state.best"), color="purple")
 #     ),
 #     bottom_elements=(
-#         Plot.html([
-#             "div",
+#         Plot.html(
 #             # For some reason `toFixed` very stubbonrly malfunctions in the following line:
 #             Plot.js("""$state.target_exists ?
 #                                 `best = Pose([${$state.best.p.map((x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
-#         ])
+#         )
 #     ),
 #     initial_state={
 #         "grid_poses": {"p": [], "hd": []},
@@ -1617,7 +1606,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #         + Plot.color_map({"some pose": "green", "with heading modified": "red"})
 #         + Plot.title("Modifying a heading")
 #     )
-#     | html("span.tc", f"score ratio: {rotated_trace_weight_diff}")
+#     | html(f"score ratio: {rotated_trace_weight_diff}")
 # )
 
 # key, k1, k2 = jax.random.split(key, 3)
@@ -1636,7 +1625,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #         for pose in trace.get_retval()[1]
 #     ]
 #     + Plot.color_map({"some path": "green", "with heading modified": "red"})
-# ) | html("span.tc", f"score ratio: {rotated_first_step_weight_diff}")
+# ) | html(f"score ratio: {rotated_first_step_weight_diff}")
 
 
 # Animating full traces
@@ -1702,10 +1691,10 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # ).run(k2, N_particles)
 # (
 #     (
-#         html(["div", "SIS on high motion-deviation data"])
+#         html("SIS on high motion-deviation data")
 #         | plot_sis_result(path_high_deviation, sis_result)
 #     ) & (
-#         html(["div", "SIS on low motion-deviation data"])
+#         html("SIS on low motion-deviation data")
 #         | plot_sis_result(path_low_deviation, sis_result)
 #     )
 # )
@@ -1725,10 +1714,10 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # ).run(sub_key, N_particles)
 # (
 #     (
-#         html(["div", ["p", "SIS per se (no rejuvenation)"], ["p", "high motion-deviation data"]])
+#         html("SIS per se (no rejuvenation)", "high motion-deviation data")
 #         | plot_sis_result(path_high_deviation, sis_result)
 #     ) & (
-#         html(["div", ["p", "SIS with SMCP3 grid rejuvenation"], ["p", "high motion-deviation data"]])
+#         html("SIS with SMCP3 grid rejuvenation", "high motion-deviation data")
 #         | plot_sis_result(path_high_deviation, smcp3_result)
 #     )
 # )

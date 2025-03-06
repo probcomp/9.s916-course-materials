@@ -707,21 +707,17 @@ def on_target_pose_chage(widget, _):
     | noise_slider("noise_slider", "Sensor noise =", sensor_settings["s_noise"])
     | (
         Plot.html([
-            "div",
-            {"class": "flex flex-col gap-4"},
+            "label",
+            {"class": "flex items-center gap-2 cursor-pointer"},
             [
-                "label",
-                {"class": "flex items-center gap-2 cursor-pointer"},
-                [
-                    "input",
-                    {
-                        "type": "checkbox",
-                        "checked": js("$state.show_target_pose"),
-                        "onChange": js("(e) => $state.show_target_pose = e.target.checked")
-                    }
-                ],
-                "show target pose"
-            ]
+                "input",
+                {
+                    "type": "checkbox",
+                    "checked": js("$state.show_target_pose"),
+                    "onChange": js("(e) => $state.show_target_pose = e.target.checked")
+                }
+            ],
+            "show target pose"
         ])
         & Plot.html(js("`guess = Pose([${$state.guess.p.map((x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"))
         & Plot.html(js("`target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"))
@@ -921,26 +917,20 @@ def camera_widget(
         | noise_slider("model_noise", "Model/inference noise = ", sensor_settings["s_noise"])
         | (
             Plot.html([
-                "div",
-                {"class": "flex flex-col gap-4"},
-                [
-                    "button",
-                    {
-                        "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
-                        "onClick": on_camera_button(button_handler)
-                    },
-                    button_label
-                ]
+                "button",
+                {
+                    "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
+                    "onClick": on_camera_button(button_handler)
+                },
+                button_label
             ])
-            & Plot.html([
-                "div",
+            & Plot.html(
                 Plot.js("""`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`""")
-            ])
-            & Plot.html([
-                "div",
+            )
+            & Plot.html(
                 Plot.js("""$state.target_exists ?
                                 `target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
-            ])
+            )
             & bottom_elements
         )
         | Plot.initialState(
@@ -1004,12 +994,11 @@ camera_widget(
         + pose_plots(js("$state.best"), color="purple")
     ),
     bottom_elements=(
-        Plot.html([
-            "div",
+        Plot.html(
             # For some reason `toFixed` very stubbonrly malfunctions in the following line:
             Plot.js("""$state.target_exists ?
                                 `best = Pose([${$state.best.p.map((x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
-        ])
+        )
     ),
     initial_state={
         "grid_poses": {"p": [], "hd": []},
@@ -1669,7 +1658,7 @@ rotated_trace, rotated_trace_weight_diff, _, _ = trace.update(
         + Plot.color_map({"some pose": "green", "with heading modified": "red"})
         + Plot.title("Modifying a heading")
     )
-    | html("span.tc", f"score ratio: {rotated_trace_weight_diff}")
+    | html(f"score ratio: {rotated_trace_weight_diff}")
 )
 
 # %% [markdown]
@@ -1696,7 +1685,7 @@ rotated_first_step, rotated_first_step_weight_diff, _, _ = trace.update(
         for pose in trace.get_retval()[1]
     ]
     + Plot.color_map({"some path": "green", "with heading modified": "red"})
-) | html("span.tc", f"score ratio: {rotated_first_step_weight_diff}")
+) | html(f"score ratio: {rotated_first_step_weight_diff}")
 
 
 # %% [markdown]
@@ -1814,13 +1803,13 @@ key, sub_key = jax.random.split(key)
 sample, log_weight = full_model.importance(
     sub_key, constraints_low_deviation, (motion_settings_low_deviation, sensor_settings["s_noise"])
 )
-animate_full_trace(sample) | html("span.tc", f"log_weight: {log_weight}")
+animate_full_trace(sample) | html(f"log_weight: {log_weight}")
 # %%
 key, sub_key = jax.random.split(key)
 sample, log_weight = full_model.importance(
     sub_key, constraints_high_deviation, (motion_settings_high_deviation, sensor_settings["s_noise"])
 )
-animate_full_trace(sample) | html("span.tc", f"log_weight: {log_weight}")
+animate_full_trace(sample) | html(f"log_weight: {log_weight}")
 # %% [markdown]
 # A trace resulting from a call to `importance` is structurally indistinguishable from one drawn from `simulate`.  But there is a key *situational* difference: while `get_score` always returns the frequency with which `simulate` stochastically produces the trace, this value is **no longer equal to** the frequency with which the trace is stochastically produced by `importance`.  This is both true in an obvious and less relevant sense, as well as true in a more subtle and extremely germane sense.
 #
@@ -1891,9 +1880,9 @@ trace_path_integrated_observations_high_deviation, w_high = full_model.importanc
 
 Plot.Row(*[
     (
-        html("div.f3.b.tc", title)
+        html(title)
         | animate_full_trace(trace, frame_key="frame")
-        | html("span.tc", f"score: {score:,.2f}")
+        | html(f"score: {score:,.2f}")
     )
     for (title, trace, motion_settings, score) in (
         [
@@ -2333,10 +2322,10 @@ sis_result = localization_sis(
 
 (
     (
-        html(["div", "SIS on high motion-deviation data"])
+        html("SIS on high motion-deviation data")
         | plot_sis_result(path_high_deviation, sis_result)
     ) & (
-        html(["div", "SIS on low motion-deviation data"])
+        html("SIS on low motion-deviation data")
         | plot_sis_result(path_low_deviation, sis_result)
     )
 )
@@ -2451,10 +2440,10 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 
 (
     (
-        html(["div", ["p", "SIS per se (no rejuvenation)"], ["p", "high motion-deviation data"]])
+        html("SIS per se (no rejuvenation)", "high motion-deviation data")
         | plot_sis_result(path_high_deviation, sis_result)
     ) & (
-        html(["div", ["p", "SIS with SMCP3 grid rejuvenation"], ["p", "high motion-deviation data"]])
+        html("SIS with SMCP3 grid rejuvenation", "high motion-deviation data")
         | plot_sis_result(path_high_deviation, smcp3_result)
     )
 )
