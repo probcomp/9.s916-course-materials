@@ -99,7 +99,7 @@ def make_world(wall_verts, clutters_vec):
     # Calculate bounding box, box size, and center point
     bounding_box = jnp.array([[x_min, x_max], [y_min, y_max], [-jnp.pi, +jnp.pi]])
     box_size = max(x_max - x_min, y_max - y_min)
-    center_point = jnp.array([(x_min + x_max) / 2.0, (y_min + y_max) / 2.0])
+    center_point = jnp.array([(x_min + x_max) / 2, (y_min + y_max) / 2])
 
     return {
             "walls": walls,
@@ -375,7 +375,7 @@ def distance(p, seg, PARALLEL_TOL=1.0e-6):
         ]) / det
     )
     return jnp.where(
-        (st[0] >= 0.0) & (st[1] >= 0.0) & (st[1] <= 1.0),
+        (st[0] >= 0) & (st[1] >= 0) & (st[1] <= 1),
         st[0],
         jnp.inf
     )
@@ -391,7 +391,7 @@ sensor_settings = {
 def sensor_distance(pose, walls, box_size):
     d = jnp.min(jax.vmap(distance, in_axes=(None, 0))(pose, walls))
     # Capping to a finite value avoids issues below.
-    return jnp.where(jnp.isinf(d), 2.0 * box_size, d)
+    return jnp.where(jnp.isinf(d), 2 * box_size, d)
 
 # This represents a "fan" of sensor angles, with given field of vision, centered at angle 0.
 
@@ -487,7 +487,7 @@ Plot.Frames([
 # Its declarative model in `Gen` starts with the case of just one sensor reading:
 
 # %%
-sensor_settings["s_noise"] = 0.10
+sensor_settings["s_noise"] = 0.1
 
 @genjax.gen
 def sensor_model_one(pose, angle, s_noise):
@@ -630,7 +630,7 @@ jnp.exp(score)
 # %%
 key, k1, k2, k3 = jax.random.split(key, 4)
 
-guess_pose = Pose(jnp.array([2.0, 16]), jnp.array(0.0))
+guess_pose = Pose(jnp.array([2.0, 16.0]), jnp.array(0.0))
 target_pose = Pose(jnp.array([15.0, 4.0]), jnp.array(-1.6))
 
 def likelihood_function(cm, pose, s_noise):
@@ -791,7 +791,7 @@ two_room_prior = genjax.mix(
 
 def two_room_cm_builder(pose):
     return (
-        C["mixture_component"].set(jnp.array(pose.p[1] < 10.0, int))
+        C["mixture_component"].set(jnp.array(pose.p[1] < 10, int))
         | C["component_sample", "p_array"].set(pose.as_array())
     )
 
@@ -808,7 +808,7 @@ some_poses = jax.vmap(lambda k: two_room_prior.simulate(k, ()))(jax.random.split
 
 # %%
 # Prior localized around a single pose
-pose_for_localized_prior = Pose(jnp.array([2.0, 16]), jnp.array(0.0))
+pose_for_localized_prior = Pose(jnp.array([2.0, 16.0]), jnp.array(0.0))
 spread_of_localized_prior = (0.1, 0.75)
 @genjax.gen
 def localized_prior():
@@ -980,7 +980,7 @@ N_keep = 1000  # keep the top this many out of the total `jnp.prod(N_grid)` of t
 
 key, sub_key = jax.random.split(key)
 
-camera_pose = Pose(jnp.array([2.0, 16]), jnp.array(0.0))
+camera_pose = Pose(jnp.array([2.0, 16.0]), jnp.array(0.0))
 
 def grid_search_handler(widget, k, readings):
     model_noise = float(getattr(widget.state, "model_noise"))
@@ -1000,7 +1000,7 @@ camera_widget(
     "grid search",
     grid_search_handler,
     result_plots=(
-        pose_plots(js("$state.grid_poses"), color="green", opacity=jnp.arange(1.0, 0.0, -1.0/N_keep))
+        pose_plots(js("$state.grid_poses"), color="green", opacity=jnp.arange(1.0, 0.0, -1/N_keep))
         + pose_plots(js("$state.best"), color="purple")
     ),
     bottom_elements=(
@@ -1382,7 +1382,7 @@ def step_model(motion_settings, start, control):
 
 # Set the motion settings
 degrees = jnp.pi / 180
-default_motion_settings = {"p_noise": 0.5, "hd_noise": 10.0 * degrees}
+default_motion_settings = {"p_noise": 0.5, "hd_noise": 10 * degrees}
 
 # %% [markdown]
 # The reader is especially encouraged, in the following widget, to drag the attempted step beyond a wall, to get a feel for how this model handles the physics.
@@ -1407,7 +1407,7 @@ def update_confidence_circle(widget, _):
     tilted_start = Pose(robot_inputs["start"].p, tilted_start_hd)
 
     ds = jnp.linalg.norm(step_vector)
-    dhd = (step.hd - tilted_start_hd + jnp.pi) % (2.0 * jnp.pi) - jnp.pi
+    dhd = (step.hd - tilted_start_hd + jnp.pi) % (2 * jnp.pi) - jnp.pi
 
     widget.state.update({
         "start": tilted_start.as_dict(),
@@ -1642,15 +1642,13 @@ pz.ts.display(trace)
 #
 # One could, for instance, consider just the placement of the first step, and replace its stochastic choice of heading with an updated value. The original trace was typical under the pose prior model, whereas the modified one may be rather less likely. This plot is annotated with log of how much unlikelier, the score ratio:
 # %%
-key, sub_key = jax.random.split(key)
+key, k1, k2 = jax.random.split(key, 3)
 trace = step_model.simulate(
-    sub_key,
+    k1,
     (default_motion_settings, robot_inputs["start"], robot_inputs["controls"][0]),
 )
-
-key, sub_key = jax.random.split(key)
 rotated_trace, rotated_trace_weight_diff, _, _ = trace.update(
-    sub_key, C["hd"].set(jnp.pi / 2.0)
+    k2, C["hd"].set(jnp.pi / 2)
 )
 
 (
@@ -1669,12 +1667,10 @@ rotated_trace, rotated_trace_weight_diff, _, _ = trace.update(
 # %% [markdown]
 # It is worth carefully thinking through a trickier instance of this.  Suppose instead, within the full path, we replaced the first step's stochastic choice of heading with some specific value.
 # %%
-key, sub_key = jax.random.split(key)
-trace = path_model.simulate(sub_key, (robot_inputs["start"], robot_inputs["controls"]))
-key, sub_key = jax.random.split(key)
-
+key, k1, k2 = jax.random.split(key, 3)
+trace = path_model.simulate(k1, (robot_inputs["start"], robot_inputs["controls"]))
 rotated_first_step, rotated_first_step_weight_diff, _, _ = trace.update(
-    sub_key, C[0, "hd"].set(jnp.pi / 2.0)
+    k2, C[0, "hd"].set(jnp.pi / 2)
 )
 
 # %% [markdown]
@@ -1731,11 +1727,11 @@ animate_full_trace(tr)
 
 motion_settings_low_deviation = {
     "p_noise": 0.05,
-    "hd_noise": (1 / 10.0) * degrees,
+    "hd_noise": (1 / 10) * degrees,
 }
 motion_settings_high_deviation = {
     "p_noise": 0.25,
-    "hd_noise": 1.0 * degrees,
+    "hd_noise": 1 * degrees,
 }
 
 key, k_low, k_high = jax.random.split(key, 3)
@@ -2418,7 +2414,7 @@ def grid_bwd_proposal(new_sample, args):
 # %%
 def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, observations):
     base_grid = make_poses_grid_array(
-        jnp.array([M_grid / 2.0, M_grid / 2.0]).T,
+        jnp.array([M_grid / 2, M_grid / 2]).T,
         N_grid
     )
     return SISwithRejuvenation(
@@ -2445,7 +2441,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # %%
 N_particles = 100
-M_grid = jnp.array([0.5, 0.5, (3.0 / 10.0) * degrees])
+M_grid = jnp.array([0.5, 0.5, (3 / 10) * degrees])
 N_grid = jnp.array([15, 15, 15])
 
 key, sub_key = jax.random.split(key)
