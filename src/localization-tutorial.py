@@ -1810,16 +1810,14 @@ animate_bare_sensors(path_integrated, world_plot)
 # Given a choice map of *constraints* that declare fixed values of some of the primitive choices, the operation `importance` proposes traces of the generative function that are consistent with these constraints.
 
 # %%
-model_importance = jax.jit(full_model.importance)
-
 key, sub_key = jax.random.split(key)
-sample, log_weight = model_importance(
+sample, log_weight = full_model.importance(
     sub_key, constraints_low_deviation, (motion_settings_low_deviation, sensor_settings["s_noise"])
 )
 animate_full_trace(sample) | html("span.tc", f"log_weight: {log_weight}")
 # %%
 key, sub_key = jax.random.split(key)
-sample, log_weight = model_importance(
+sample, log_weight = full_model.importance(
     sub_key, constraints_high_deviation, (motion_settings_high_deviation, sensor_settings["s_noise"])
 )
 animate_full_trace(sample) | html("span.tc", f"log_weight: {log_weight}")
@@ -1881,13 +1879,13 @@ constraints_path_integrated_observations_high_deviation = (
 )
 
 key, sub_key = jax.random.split(key)
-trace_path_integrated_observations_low_deviation, w_low = model_importance(
+trace_path_integrated_observations_low_deviation, w_low = full_model.importance(
     sub_key,
     constraints_path_integrated_observations_low_deviation,
     (motion_settings_low_deviation, sensor_settings["s_noise"]),
 )
 key, sub_key = jax.random.split(key)
-trace_path_integrated_observations_high_deviation, w_high = model_importance(
+trace_path_integrated_observations_high_deviation, w_high = full_model.importance(
     sub_key,
     constraints_path_integrated_observations_high_deviation,
     (motion_settings_high_deviation, sensor_settings["s_noise"]),
@@ -1924,7 +1922,7 @@ N_samples = 200
 key, sub_key = jax.random.split(key)
 
 traces_generated_low_deviation, low_weights = jax.vmap(
-    model_importance, in_axes=(0, None, None)
+    full_model.importance, in_axes=(0, None, None)
 )(
     jax.random.split(sub_key, N_samples),
     constraints_low_deviation,
@@ -1932,7 +1930,7 @@ traces_generated_low_deviation, low_weights = jax.vmap(
 )
 
 traces_generated_high_deviation, high_weights = jax.vmap(
-    model_importance, in_axes=(0, None, None)
+    full_model.importance, in_axes=(0, None, None)
 )(
     jax.random.split(sub_key, N_samples),
     constraints_high_deviation,
@@ -2034,17 +2032,14 @@ Plot.new(
 # ment over rejection sampling: intead of indefinitely constructing and rejecting samples, we can guarantee to use at least some of them after a fixed time, and we are using the best guesses among these.
 
 # %%
-N_presamples = 2000
-N_samples = 20
-
-def importance_sample(
+def importance_resample_unjitted(
     key: PRNGKey, constraints: genjax.ChoiceMap, motion_settings, s_noise, N: int, K: int
 ):
     """Produce K importance samples of depth N from the model. That is, K times, we
     generate N importance samples conditioned by the constraints, and categorically
     select one of them."""
     key1, key2 = jax.random.split(key)
-    samples, log_weights = jax.vmap(model_importance, in_axes=(0, None, None))(
+    samples, log_weights = jax.vmap(full_model.importance, in_axes=(0, None, None))(
         jax.random.split(key1, N * K), constraints, (motion_settings, s_noise)
     )
     winners = jax.vmap(genjax.categorical.propose)(
@@ -2056,20 +2051,9 @@ def importance_sample(
     selected = jax.tree.map(lambda x: x[winners], samples)
     return selected
 
-
-jit_resample = jax.jit(importance_sample, static_argnums=(4, 5))
-
-key, sub_key = jax.random.split(key)
-low_posterior = jit_resample(
-    sub_key, constraints_low_deviation, motion_settings_low_deviation, sensor_settings["s_noise"], N_presamples, N_samples
-)
-key, sub_key = jax.random.split(key)
-high_posterior = jit_resample(
-    sub_key, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
-)
+importance_resample = jax.jit(importance_resample_unjitted, static_argnums=(4, 5))
 
 
-# %%
 def path_to_polyline(path, **options):
     if len(path.p.shape) > 1:
         x_coords = path.p[:, 0]
@@ -2077,6 +2061,18 @@ def path_to_polyline(path, **options):
         return Plot.line({"x": x_coords, "y": y_coords}, {"curve": "linear", **options})
     else:
         return Plot.dot([path.p], fill=options["stroke"], r=2, **options)
+
+# %%
+N_presamples = 2000
+N_samples = 20
+
+key, k1, k2 = jax.random.split(key, 3)
+low_posterior = importance_resample(
+    k1, constraints_low_deviation, motion_settings_low_deviation, sensor_settings["s_noise"], N_presamples, N_samples
+)
+high_posterior = importance_resample(
+    k2, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
+)
 
 (
     world_plot

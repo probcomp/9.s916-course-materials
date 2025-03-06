@@ -824,15 +824,14 @@ constraints_high_deviation = C["steps", "sensor", "distance"].set(observations_h
 
 # Whole-path importance resampling
 
-def importance_sample(
+def importance_resample_unjitted(
     key: PRNGKey, constraints: genjax.ChoiceMap, motion_settings, s_noise, N: int, K: int
 ):
     """Produce K importance samples of depth N from the model. That is, K times, we
     generate N importance samples conditioned by the constraints, and categorically
     select one of them."""
     key1, key2 = jax.random.split(key)
-    model_importance = jax.jit(full_model.importance)
-    samples, log_weights = jax.vmap(model_importance, in_axes=(0, None, None))(
+    samples, log_weights = jax.vmap(full_model.importance, in_axes=(0, None, None))(
         jax.random.split(key1, N * K), constraints, (motion_settings, s_noise)
     )
     winners = jax.vmap(genjax.categorical.propose)(
@@ -843,7 +842,8 @@ def importance_sample(
     winners += jnp.arange(0, N * K, N)
     selected = jax.tree.map(lambda x: x[winners], samples)
     return selected
-jit_resample = jax.jit(importance_sample, static_argnums=(4, 5))
+
+importance_resample = jax.jit(importance_resample_unjitted, static_argnums=(4, 5))
 
 def path_to_polyline(path, **options):
     if len(path.p.shape) > 1:
@@ -1644,13 +1644,12 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # N_presamples = 2000
 # N_samples = 20
-# key, sub_key = jax.random.split(key)
-# low_posterior = jit_resample(
-#     sub_key, constraints_low_deviation, motion_settings_low_deviation, sensor_settings["s_noise"], N_presamples, N_samples
+# key, k1, k2 = jax.random.split(key, 3)
+# low_posterior = importance_resample(
+#     k1, constraints_low_deviation, motion_settings_low_deviation, sensor_settings["s_noise"], N_presamples, N_samples
 # )
-# key, sub_key = jax.random.split(key)
-# high_posterior = jit_resample(
-#     sub_key, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
+# high_posterior = importance_resample(
+#     k2, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
 # )
 # (
 #     world_plot
