@@ -160,8 +160,10 @@ walls_plot = Plot.new(
     Plot.domain(world["bounding_box"][0]),
 )
 
-world_plot = Plot.new(
-    walls_plot, Plot.frame(strokeWidth=4, stroke="#ddd"), Plot.color_legend()
+world_plot = (
+    walls_plot
+    + Plot.frame(strokeWidth=4, stroke="#ddd")
+    + Plot.color_legend()
 )
 
 clutters_plot = (
@@ -1570,6 +1572,7 @@ def animate_path_and_sensors(path, readings, motion_settings, frame_key=None):
         for step, pose in enumerate(path)
     ], fps=2, key=frame_key)
 
+# %%
 animate_path_and_sensors(retval[1], cm["steps", "sensor", "distance"], default_motion_settings)
 
 # %% [markdown]
@@ -1649,17 +1652,14 @@ rotated_trace, rotated_trace_weight_diff, _, _ = trace.update(
 )
 
 (
-    Plot.new(
-        world_plot
-        + pose_plots(trace.get_retval(), color=Plot.constantly("some pose"))
-        + pose_plots(
-            rotated_trace.get_retval(), color=Plot.constantly("with heading modified")
-        )
-        + Plot.color_map({"some pose": "green", "with heading modified": "red"})
-        + Plot.title("Modifying a heading")
+    world_plot
+    + pose_plots(trace.get_retval(), color=Plot.constantly("some pose"))
+    + pose_plots(
+        rotated_trace.get_retval(), color=Plot.constantly("with heading modified")
     )
-    | html(f"score ratio: {rotated_trace_weight_diff}")
-)
+    + Plot.color_map({"some pose": "green", "with heading modified": "red"})
+    + Plot.title("Modifying a heading")
+) | html(f"score ratio: {rotated_trace_weight_diff}")
 
 # %% [markdown]
 # It is worth carefully thinking through a trickier instance of this.  Suppose instead, within the full path, we replaced the first step's stochastic choice of heading with some specific value.
@@ -1709,9 +1709,9 @@ def animate_full_trace(trace, frame_key=None):
         path, readings, motion_settings, frame_key=frame_key
     )
 
+# %%
 key, sub_key = jax.random.split(key)
 tr = full_model.simulate(sub_key, (default_motion_settings, sensor_settings["s_noise"]))
-
 animate_full_trace(tr)
 
 # %% [markdown]
@@ -1734,10 +1734,16 @@ motion_settings_high_deviation = {
 key, k_low, k_high = jax.random.split(key, 3)
 trace_low_deviation = full_model.simulate(k_low, (motion_settings_low_deviation, sensor_settings["s_noise"]))
 trace_high_deviation = full_model.simulate(k_high, (motion_settings_high_deviation, sensor_settings["s_noise"]))
-# %%
-animate_full_trace(trace_low_deviation)
-# %%
-animate_full_trace(trace_high_deviation)
+
+(
+    (
+        html("low motion-deviation data")
+        | animate_full_trace(trace_low_deviation, frame_key="frame")
+    ) & (
+        html("high motion-deviation data")
+        | animate_full_trace(trace_high_deviation, frame_key="frame")
+    )
+) | Plot.Slider("frame", 0, T, fps=2)
 # %% [markdown]
 # Since we imagine these data as having been recorded from the real world, keep only their extracted data, *discarding* the traces that produced them.
 # %%
@@ -1759,24 +1765,23 @@ constraints_high_deviation = C["steps", "sensor", "distance"].set(observations_h
 
 
 # %%
-def animate_bare_sensors(path, plot_base=[]):
-    def frame(pose, readings1, readings2):
-        def plt(readings):
-            return Plot.new(
-                plot_base or Plot.domain([0, 20]),
-                plot_sensors(pose, readings, sensor_angles, show_legend=True),
-                {"width": 400, "height": 400},
-            )
+empty_world = Plot.new(
+    {"margin": 0, "inset": 50, "width": 500, "axis": None, "aspectRatio": 1},
+    Plot.domain(world["bounding_box"][0]),
+)
 
-        return plt(readings1) & plt(readings2)
-
-    return Plot.Frames([
-        frame(*scene)
-        for scene in zip(path, observations_low_deviation, observations_high_deviation)
-    ], fps=2)
-
-
-animate_bare_sensors(itertools.repeat(Pose(world["center_point"], 0.0)))
+(
+    Plot.Frames([
+        empty_world
+        + plot_sensors(Pose(world["center_point"], 0.0), readings, sensor_angles, show_legend=True)
+        for readings in observations_low_deviation
+    ], key="frame")
+    & Plot.Frames([
+        empty_world
+        + plot_sensors(Pose(world["center_point"], 0.0), readings, sensor_angles, show_legend=True)
+        for readings in observations_high_deviation
+    ], key="frame")
+) | Plot.Slider("frame", 0, T, fps=2)
 # %% [markdown]
 # ## Inference over robot paths
 #
@@ -1784,8 +1789,18 @@ animate_bare_sensors(itertools.repeat(Pose(world["center_point"], 0.0)))
 #
 # The path obtained by integrating the controls serves as a proposal for the true path, but it is unsatisfactory, especially in the high motion deviation case. The picture gives an intuitive sense of the (poor) fit:
 # %%
-
-animate_bare_sensors(path_integrated, world_plot)
+(
+    Plot.Frames([
+        world_plot
+        + plot_sensors(pose, readings, sensor_angles, show_legend=True)
+        for (pose, readings) in zip(path_integrated, observations_low_deviation)
+    ], key="frame")
+    & Plot.Frames([
+        world_plot
+        + plot_sensors(pose, readings, sensor_angles, show_legend=True)
+        for (pose, readings) in zip(path_integrated, observations_high_deviation)
+    ], key="frame")
+) | Plot.Slider("frame", 0, T, fps=2)
 # %% [markdown]
 # It would seem that the fit is reasonable in low motion deviation, but really breaks down in high motion deviation.
 #
@@ -1799,17 +1814,26 @@ animate_bare_sensors(path_integrated, world_plot)
 # Given a choice map of *constraints* that declare fixed values of some of the primitive choices, the operation `importance` proposes traces of the generative function that are consistent with these constraints.
 
 # %%
-key, sub_key = jax.random.split(key)
-sample, log_weight = full_model.importance(
-    sub_key, constraints_low_deviation, (motion_settings_low_deviation, sensor_settings["s_noise"])
+key, k1, k2 = jax.random.split(key, 3)
+trace_low, log_weight_low = full_model.importance(
+    k1, constraints_low_deviation, (default_motion_settings, sensor_settings["s_noise"])
 )
-animate_full_trace(sample) | html(f"log_weight: {log_weight}")
-# %%
-key, sub_key = jax.random.split(key)
-sample, log_weight = full_model.importance(
-    sub_key, constraints_high_deviation, (motion_settings_high_deviation, sensor_settings["s_noise"])
+trace_high, log_weight_high = full_model.importance(
+    k2, constraints_high_deviation, (default_motion_settings, sensor_settings["s_noise"])
 )
-animate_full_trace(sample) | html(f"log_weight: {log_weight}")
+
+(
+    (
+        html("fresh path sample", "fixed low-motion deviation sensor data")
+        | animate_full_trace(trace_low, frame_key="frame")
+        | html(f"log_weight: {log_weight_low}")
+    ) & (
+        html("fresh path sample", "fixed high-motion deviation sensor data")
+        | animate_full_trace(trace_high, frame_key="frame")
+        | html(f"log_weight: {log_weight_high}")
+    )
+) | Plot.Slider("frame", 0, T, fps=2)
+
 # %% [markdown]
 # A trace resulting from a call to `importance` is structurally indistinguishable from one drawn from `simulate`.  But there is a key *situational* difference: while `get_score` always returns the frequency with which `simulate` stochastically produces the trace, this value is **no longer equal to** the frequency with which the trace is stochastically produced by `importance`.  This is both true in an obvious and less relevant sense, as well as true in a more subtle and extremely germane sense.
 #
@@ -1838,7 +1862,7 @@ animate_full_trace(sample) | html(f"log_weight: {log_weight}")
 # Thus in our running example, the projection in question is $\prod_{t=0}^T P_\text{sensor}(o_t)$.
 # %%
 key, sub_key = jax.random.split(key)
-log_weight - sample.project(sub_key, S["steps", "sensor", "distance"])
+log_weight_high - trace_high.project(sub_key, S["steps", "sensor", "distance"])
 
 
 # %% [markdown]
@@ -1859,46 +1883,30 @@ def constraint_from_path(path):
     return c_ps | c_hds
 
 constraints_path_integrated = constraint_from_path(path_integrated)
-constraints_path_integrated_observations_low_deviation = (
-    constraints_path_integrated | constraints_low_deviation
-)
-constraints_path_integrated_observations_high_deviation = (
-    constraints_path_integrated | constraints_high_deviation
-)
 
 key, k1, k2 = jax.random.split(key, 3)
-trace_path_integrated_observations_low_deviation, w_low = full_model.importance(
+trace_path_integrated_observations_low_deviation, log_weight_low = full_model.importance(
     k1,
-    constraints_path_integrated_observations_low_deviation,
+    constraints_path_integrated | constraints_low_deviation,
     (motion_settings_low_deviation, sensor_settings["s_noise"]),
 )
-trace_path_integrated_observations_high_deviation, w_high = full_model.importance(
+trace_path_integrated_observations_high_deviation, log_weight_high = full_model.importance(
     k2,
-    constraints_path_integrated_observations_high_deviation,
+    constraints_path_integrated | constraints_high_deviation,
     (motion_settings_high_deviation, sensor_settings["s_noise"]),
 )
 
-Plot.Row(*[
+(
     (
-        html(title)
-        | animate_full_trace(trace, frame_key="frame")
-        | html(f"score: {score:,.2f}")
+        html("integrated path from controls", "fixed low-motion deviation sensor data")
+        | animate_full_trace(trace_path_integrated_observations_low_deviation, frame_key="frame")
+        | html(f"log_weight: {log_weight_low}")
+    ) & (
+        html("integrated path from controls", "fixed high-motion deviation sensor data")
+        | animate_full_trace(trace_path_integrated_observations_high_deviation, frame_key="frame")
+        | html(f"log_weight: {log_weight_high}")
     )
-    for (title, trace, motion_settings, score) in (
-        [
-            "Low deviation",
-            trace_path_integrated_observations_low_deviation,
-            motion_settings_low_deviation,
-            w_low,
-        ],
-        [
-            "High deviation",
-            trace_path_integrated_observations_high_deviation,
-            motion_settings_high_deviation,
-            w_high,
-        ],
-)
-]) | Plot.Slider("frame", 0, T, fps=2)
+) | Plot.Slider("frame", 0, T, fps=2)
 # %% [markdown]
 # ...more closely resembles the density of these data back-fitted onto typical (random) paths of the model.
 
@@ -1925,16 +1933,18 @@ traces_generated_high_deviation, high_weights = jax.vmap(
 low_deviation_paths = jax.vmap(get_path)(traces_generated_low_deviation)
 high_deviation_paths = jax.vmap(get_path)(traces_generated_high_deviation)
 
-Plot.new(
-    world_plot,
-    [
-        pose_plots(pose, color="blue", opacity=0.1)
-        for pose in high_deviation_paths[:20]
-    ],
-    [
+(
+    world_plot
+    + [
         pose_plots(pose, color="green", opacity=0.1)
         for pose in low_deviation_paths[:20]
-    ],
+    ]
+) & (
+    world_plot
+    + [
+        pose_plots(pose, color="blue", opacity=0.1)
+        for pose in high_deviation_paths[:20]
+    ]
 )
 
 # %% [markdown]
@@ -2047,6 +2057,25 @@ def path_to_polyline(path, **options):
     else:
         return Plot.dot([path.p], fill=options["stroke"], r=2, **options)
 
+def plot_inference_result(title, samples_label, posterior_paths, target_path):
+    return (
+        html(*title)
+        | (
+            world_plot
+            + [
+                path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="green")
+                for path in posterior_paths
+            ]
+            + pose_plots(
+                target_path, fill=Plot.constantly("path to be inferred"), opacity = 0.5, strokeWidth=2
+            )
+            + Plot.color_map({
+                samples_label: "green",
+                "path to be inferred": "black",
+            })
+        )
+    )
+
 # %%
 N_presamples = 2000
 N_samples = 20
@@ -2059,32 +2088,16 @@ high_posterior = importance_resample(
     k2, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
 )
 
-(
-    world_plot
-    + [
-        path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="green")
-        for path in jax.vmap(get_path)(low_posterior)
-    ]
-    + [
-        path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="blue")
-        for path in jax.vmap(get_path)(high_posterior)
-    ]
-    + pose_plots(
-        path_low_deviation, fill=Plot.constantly("low deviation path"), opacity=0.2
-    )
-    + pose_plots(
-        path_high_deviation, fill=Plot.constantly("high deviation path"), opacity=0.2
-    )
-    + pose_plots(
-        path_integrated, fill=Plot.constantly("integrated path"), opacity=0.2
-    )
-    + Plot.color_map(
-        {
-            "low deviation path": "green",
-            "high deviation path": "blue",
-            "integrated path": "black",
-        }
-    )
+plot_inference_result(
+    ("importance resampling on low motion-deviation data",),
+    "importance resamples",
+    jax.vmap(get_path)(low_posterior),
+    path_low_deviation
+) & plot_inference_result(
+    ("importance resampling on high motion-deviation data",),
+    "importance resamples",
+    jax.vmap(get_path)(high_posterior),
+    path_high_deviation
 )
 # %% [markdown]
 # Let's pause a moment to examine this chart. If the robot had no sensors, it would have no alternative but to estimate its position by integrating the control inputs to produce the integrated path in gray. In the low deviation setting, *the sensor data combined with importance sampling is enough* to give accurate results in the low deviation setting.
@@ -2274,62 +2287,39 @@ def localization_sis(motion_settings, s_noise, observations):
     )
 
 
-# %%
-# This cell is included for convenience:
-# Rerun it to try out the SMC examples on a fresh instance of the problem.
-
-# Set `sensor_settings["s_noise"]` here, if you wish.
-
-key, k_low, k_high = jax.random.split(key, 3)
-trace_low_deviation = full_model.simulate(k_low, (motion_settings_low_deviation, sensor_settings["s_noise"]))
-trace_high_deviation = full_model.simulate(k_high, (motion_settings_high_deviation, sensor_settings["s_noise"]))
-path_low_deviation = get_path(trace_low_deviation)
-path_high_deviation = get_path(trace_high_deviation)
-observations_low_deviation = get_sensors(trace_low_deviation)
-observations_high_deviation = get_sensors(trace_high_deviation)
-
 # %% [markdown]
-# Below, totality of sampled partial paths are shown in green, those surviving to the end appearing the thickest, while the ground truth is shown in blue.
-
-# %%
-
-def plot_sis_result(ground_truth, sis_result):
-    return (
-        world_plot
-        + path_to_polyline(ground_truth, stroke="blue", strokeWidth=2)
-        + [
-            path_to_polyline(
-                Pose(jnp.array([pose.p for pose in poses]), [pose.hd for pose in poses]),
-                opacity=0.1,
-                stroke="green"
-            )
-            for poses in sis_result.flood_fill()
-        ]
-    )
+# Below, totality of sampled partial paths are shown in green, those surviving to the end appearing the thickest, while the ground truth is shown in black.
 
 # %%
 key, k1, k2 = jax.random.split(key, 3)
 
-N_particles = 100
-sis_result = localization_sis(
-    motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
+N_particles = 20
+sis_result_low = localization_sis(
+    motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
 ).run(k1, N_particles)
 
-N_particles = 20
-sis_result = localization_sis(
-    motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
+N_particles = 100
+sis_result_high = localization_sis(
+    motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
 ).run(k2, N_particles)
 
-(
-    (
-        html("SIS on high motion-deviation data")
-        | plot_sis_result(path_high_deviation, sis_result)
-    ) & (
-        html("SIS on low motion-deviation data")
-        | plot_sis_result(path_low_deviation, sis_result)
-    )
+plot_inference_result(
+    ("SIS on low motion-deviation data",),
+    "sequential importance resamples",
+    [
+        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+        for path in sis_result_low.flood_fill()
+    ],
+    path_low_deviation
+) & plot_inference_result(
+    ("SIS on high motion-deviation data",),
+    "sequential importance resamples",
+    [
+        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+        for path in sis_result_high.flood_fill()
+    ],
+    path_high_deviation
 )
-
 # %% [markdown]
 # As already noted, after winnowing poor quality particles and replacing them with copies of the better ones, particle diversity suffers.  The technique of *rejuvenation* is to perturb the results of resampling to restore this diversity.  At the same time, it can perform operations that improve the sample quality.  In this case, we search a small grid of points near the most recent step for improvement in the score.
 #
@@ -2438,12 +2428,20 @@ smcp3_result = localization_sis_plus_grid_rejuv(
     motion_settings_high_deviation, sensor_settings["s_noise"], M_grid, N_grid, observations_high_deviation
 ).run(k2, N_particles)
 
-(
-    (
-        html("SIS per se (no rejuvenation)", "high motion-deviation data")
-        | plot_sis_result(path_high_deviation, sis_result)
-    ) & (
-        html("SIS with SMCP3 grid rejuvenation", "high motion-deviation data")
-        | plot_sis_result(path_high_deviation, smcp3_result)
-    )
+plot_inference_result(
+    ("SIS without rejuvenation", "high motion-deviation data"),
+    "samples",
+    [
+        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+        for path in sis_result.flood_fill()
+    ],
+    path_high_deviation
+) & plot_inference_result(
+    ("SIS with SMCP3 grid rejuvenation", "high motion-deviation data"),
+    "samples",
+    [
+        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+        for path in smcp3_result.flood_fill()
+    ],
+    path_high_deviation
 )

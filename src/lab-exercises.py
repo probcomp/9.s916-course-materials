@@ -140,8 +140,10 @@ walls_plot = Plot.new(
     Plot.domain(world["bounding_box"][0]),
 )
 
-world_plot = Plot.new(
-    walls_plot, Plot.frame(strokeWidth=4, stroke="#ddd"), Plot.color_legend()
+world_plot = (
+    walls_plot
+    + Plot.frame(strokeWidth=4, stroke="#ddd")
+    + Plot.color_legend()
 )
 
 clutters_plot = (
@@ -856,6 +858,25 @@ def path_to_polyline(path, **options):
     else:
         return Plot.dot([path.p], fill=options["stroke"], r=2, **options)
 
+def plot_inference_result(title, samples_label, posterior_paths, target_path):
+    return (
+        html(*title)
+        | (
+            world_plot
+            + [
+                path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="green")
+                for path in posterior_paths
+            ]
+            + pose_plots(
+                target_path, fill=Plot.constantly("path to be inferred"), opacity = 0.5, strokeWidth=2
+            )
+            + Plot.color_map({
+                samples_label: "green",
+                "path to be inferred": "black",
+            })
+        )
+    )
+
 
 # Sequential importance resampling
 
@@ -1008,20 +1029,6 @@ def localization_sis(motion_settings, s_noise, observations):
         ),
     )
 
-def plot_sis_result(ground_truth, sis_result):
-    return (
-        world_plot
-        + path_to_polyline(ground_truth, stroke="blue", strokeWidth=2)
-        + [
-            path_to_polyline(
-                Pose(jnp.array([pose.p for pose in poses]), [pose.hd for pose in poses]),
-                opacity=0.1,
-                stroke="green"
-            )
-            for poses in sis_result.flood_fill()
-        ]
-    )
-
 
 # SMCP3
 
@@ -1108,7 +1115,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # Here are the graphics gadgets.
 
 # %%
-# World plot
+# # World plot
 
 # (
 #     world_plot
@@ -1116,7 +1123,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Pose plot
+# # Pose plot
 
 # some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 # Plot.html("Click-drag on pose to change location.  Shift-click-drag on pose to change heading.") | (
@@ -1132,7 +1139,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Ideal sensor plot
+# # Ideal sensor plot
 
 # some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 # (
@@ -1163,7 +1170,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # ], fps=2)
 
 
-# Noisy sensor plot
+# # Noisy sensor plot
 
 # key, k1, k2 = jax.random.split(key, 3)
 # some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
@@ -1185,7 +1192,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Guess-the-pose demo
+# # Guess-the-pose demo
 
 # key, k1, k2, k3 = jax.random.split(key, 4)
 # guess_pose = Pose(jnp.array([2.0, 16.0]), jnp.array(0.0))
@@ -1292,7 +1299,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Pose prior plots
+# # Pose prior plots
 
 # key, sub_key = jax.random.split(key)
 # some_poses = jax.vmap(lambda k: whole_map_prior.simulate(k, ()))(jax.random.split(sub_key, 100)).get_retval()
@@ -1319,7 +1326,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Grid search widget
+# # Grid search widget
 
 # N_grid = jnp.array([50, 50, 20])
 # N_keep = 1000  # keep the top this many out of the total `jnp.prod(N_grid)` of them
@@ -1358,7 +1365,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Grid approximation sampler
+# # Grid approximation sampler
 
 # N_grid = jnp.array([50, 50, 20])
 # N_samples = 100
@@ -1385,7 +1392,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Importance resampling widget
+# # Importance resampling widget
 
 # N_presamples = 1000
 # N_samples = 100
@@ -1413,7 +1420,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Markov chain Monte Carlo widget
+# # Markov chain Monte Carlo widget
 
 # N_MH_steps = 1000
 # N_samples = 100
@@ -1460,7 +1467,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Robot motion
+# # Robot motion
 
 # def update_unphysical_path(widget, _):
 #     start = pose_at(widget.state, "start")
@@ -1501,7 +1508,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Step model
+# # Step model
 
 # N_samples = 50
 # key, k1, k2 = jax.random.split(key, 3)
@@ -1554,7 +1561,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # )
 
 
-# Path model
+# # Path model
 
 # key, sample_key = jax.random.split(key)
 # path = path_model.propose(sample_key, (default_motion_settings,))[2][1]
@@ -1579,14 +1586,14 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # ])
 
 
-# Full model
+# # Full model
 
 # key, sub_key = jax.random.split(key)
 # cm, _, retval = full_model.propose(sub_key, (default_motion_settings, sensor_settings["s_noise"]))
 # animate_path_and_sensors(retval[1], cm["steps", "sensor", "distance"], default_motion_settings)
 
 
-# Updating traces
+# # Updating traces
 
 # key, k1, k2 = jax.random.split(key, 3)
 # trace = step_model.simulate(
@@ -1597,17 +1604,14 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #     k2, C["hd"].set(jnp.pi / 2)
 # )
 # (
-#     Plot.new(
-#         world_plot
-#         + pose_plots(trace.get_retval(), color=Plot.constantly("some pose"))
-#         + pose_plots(
-#             rotated_trace.get_retval(), color=Plot.constantly("with heading modified")
-#         )
-#         + Plot.color_map({"some pose": "green", "with heading modified": "red"})
-#         + Plot.title("Modifying a heading")
+#     world_plot
+#     + pose_plots(trace.get_retval(), color=Plot.constantly("some pose"))
+#     + pose_plots(
+#         rotated_trace.get_retval(), color=Plot.constantly("with heading modified")
 #     )
-#     | html(f"score ratio: {rotated_trace_weight_diff}")
-# )
+#     + Plot.color_map({"some pose": "green", "with heading modified": "red"})
+#     + Plot.title("Modifying a heading")
+# ) | html(f"score ratio: {rotated_trace_weight_diff}")
 
 # key, k1, k2 = jax.random.split(key, 3)
 # trace = path_model.simulate(k1, (default_motion_settings,))
@@ -1628,17 +1632,46 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # ) | html(f"score ratio: {rotated_first_step_weight_diff}")
 
 
-# Animating full traces
+# # Animating full traces
 
 # key, sub_key = jax.random.split(key)
 # tr = full_model.simulate(sub_key, (default_motion_settings, sensor_settings["s_noise"]))
 # animate_full_trace(tr)
 
-# animate_full_trace(trace_low_deviation)
-# animate_full_trace(trace_high_deviation)
+# (
+#     (
+#         html("low motion-deviation data")
+#         | animate_full_trace(trace_low_deviation, frame_key="frame")
+#     ) & (
+#         html("high motion-deviation data")
+#         | animate_full_trace(trace_high_deviation, frame_key="frame")
+#     )
+# ) | Plot.Slider("frame", 0, T, fps=2)
 
 
-# Whole-path importance resampling
+# # Making traces with constraints
+
+# key, k1, k2 = jax.random.split(key, 3)
+# trace_low, log_weight_low = full_model.importance(
+#     k1, constraints_low_deviation, (default_motion_settings, sensor_settings["s_noise"])
+# )
+# trace_high, log_weight_high = full_model.importance(
+#     k2, constraints_high_deviation, (default_motion_settings, sensor_settings["s_noise"])
+# )
+# (
+#     (
+#         html("fresh path sample", "fixed low-motion deviation sensor data")
+#         | animate_full_trace(trace_low, frame_key="frame")
+#         | html(f"log_weight: {log_weight_low}")
+#     ) & (
+#         html("fresh path sample", "fixed high-motion deviation sensor data")
+#         | animate_full_trace(trace_high, frame_key="frame")
+#         | html(f"log_weight: {log_weight_high}")
+#     )
+# ) | Plot.Slider("frame", 0, T, fps=2)
+
+
+# # Whole-path importance resampling
 
 # N_presamples = 2000
 # N_samples = 20
@@ -1649,75 +1682,75 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # high_posterior = importance_resample(
 #     k2, constraints_high_deviation, motion_settings_high_deviation, sensor_settings["s_noise"], N_presamples, N_samples
 # )
-# (
-#     world_plot
-#     + [
-#         path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="green")
-#         for path in jax.vmap(get_path)(low_posterior)
-#     ]
-#     + [
-#         path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="blue")
-#         for path in jax.vmap(get_path)(high_posterior)
-#     ]
-#     + pose_plots(
-#         path_low_deviation, fill=Plot.constantly("low deviation path"), opacity=0.2
-#     )
-#     + pose_plots(
-#         path_high_deviation, fill=Plot.constantly("high deviation path"), opacity=0.2
-#     )
-#     + pose_plots(
-#         path_integrated, fill=Plot.constantly("integrated path"), opacity=0.2
-#     )
-#     + Plot.color_map(
-#         {
-#             "low deviation path": "green",
-#             "high deviation path": "blue",
-#             "integrated path": "black",
-#         }
-#     )
+# plot_inference_result(
+#     ("importance resampling on low motion-deviation data",),
+#     "importance resamples",
+#     jax.vmap(get_path)(low_posterior),
+#     path_low_deviation
+# ) & plot_inference_result(
+#     ("importance resampling on high motion-deviation data",),
+#     "importance resamples",
+#     jax.vmap(get_path)(high_posterior),
+#     path_high_deviation
 # )
 
 
-# Sequential importance resampling
+# # Sequential importance resampling
 
 # key, k1, k2 = jax.random.split(key, 3)
-# N_particles = 100
-# sis_result = localization_sis(
-#     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
-# ).run(k1, N_particles)
 # N_particles = 20
-# sis_result = localization_sis(
+# sis_result_low = localization_sis(
 #     motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
+# ).run(k1, N_particles)
+# N_particles = 100
+# sis_result_high = localization_sis(
+#     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
 # ).run(k2, N_particles)
-# (
-#     (
-#         html("SIS on high motion-deviation data")
-#         | plot_sis_result(path_high_deviation, sis_result)
-#     ) & (
-#         html("SIS on low motion-deviation data")
-#         | plot_sis_result(path_low_deviation, sis_result)
-#     )
+# plot_inference_result(
+#     ("SIS on low motion-deviation data",),
+#     "sequential importance resamples",
+#     [
+#         Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+#         for path in sis_result_low.flood_fill()
+#     ],
+#     path_low_deviation
+# ) & plot_inference_result(
+#     ("SIS on high motion-deviation data",),
+#     "sequential importance resamples",
+#     [
+#         Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+#         for path in sis_result_high.flood_fill()
+#     ],
+#     path_high_deviation
 # )
 
 
-# SMCP3
+# # SMCP3
 
 # N_particles = 100
 # M_grid = jnp.array([0.5, 0.5, (3 / 10) * degrees])
 # N_grid = jnp.array([15, 15, 15])
-# key, sub_key = jax.random.split(key)
+# key, k1, k2 = jax.random.split(key, 3)
 # sis_result = localization_sis(
 #     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
-# ).run(sub_key, N_particles)
+# ).run(k1, N_particles)
 # smcp3_result = localization_sis_plus_grid_rejuv(
 #     motion_settings_high_deviation, sensor_settings["s_noise"], M_grid, N_grid, observations_high_deviation
-# ).run(sub_key, N_particles)
-# (
-#     (
-#         html("SIS per se (no rejuvenation)", "high motion-deviation data")
-#         | plot_sis_result(path_high_deviation, sis_result)
-#     ) & (
-#         html("SIS with SMCP3 grid rejuvenation", "high motion-deviation data")
-#         | plot_sis_result(path_high_deviation, smcp3_result)
-#     )
+# ).run(k2, N_particles)
+# plot_inference_result(
+#     ("SIS without rejuvenation", "high motion-deviation data"),
+#     "samples",
+#     [
+#         Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+#         for path in sis_result.flood_fill()
+#     ],
+#     path_high_deviation
+# ) & plot_inference_result(
+#     ("SIS with SMCP3 grid rejuvenation", "high motion-deviation data"),
+#     "samples",
+#     [
+#         Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
+#         for path in smcp3_result.flood_fill()
+#     ],
+#     path_high_deviation
 # )
