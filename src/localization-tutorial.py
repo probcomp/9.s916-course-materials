@@ -1737,7 +1737,7 @@ motion_settings_high_deviation = {
 key, k_low, k_high = jax.random.split(key, 3)
 trace_low_deviation = full_model.simulate(k_low, (motion_settings_low_deviation, sensor_settings["s_noise"]))
 trace_high_deviation = full_model.simulate(k_high, (motion_settings_high_deviation, sensor_settings["s_noise"]))
-
+# %%
 animate_full_trace(trace_low_deviation)
 # %%
 animate_full_trace(trace_high_deviation)
