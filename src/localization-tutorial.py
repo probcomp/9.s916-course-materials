@@ -441,6 +441,7 @@ def update_ideal_sensors(widget, label):
     })
 
 
+some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 (
     (
         world_plot
@@ -506,6 +507,7 @@ def sensor_model_one(pose, angle, s_noise):
 
 # %%
 key, sub_key = jax.random.split(key)
+some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 cm, score, retval = sensor_model_one.propose(sub_key, (some_pose, sensor_angles[0], sensor_settings["s_noise"]))
 retval
 
@@ -523,6 +525,7 @@ sensor_model = sensor_model_one.vmap(in_axes=(None, 0, None))
 
 # %%
 key, sub_key = jax.random.split(key)
+some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 cm, score, retval = sensor_model.propose(sub_key, (some_pose, sensor_angles, sensor_settings["s_noise"]))
 retval
 
@@ -568,6 +571,7 @@ def on_slider_change(widget, _):
     update_noisy_sensors(widget, "pose", "noise_slider")
 
 key, k1, k2 = jax.random.split(key, 3)
+some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 (
     (
         world_plot
@@ -603,6 +607,7 @@ jnp.exp(score)
 # The construction of a log density function is automated by the `assess` semantics for generative functions.  This method is passed a choice map and a tuple of arguments, and it returns the log score plus the return value.
 
 # %%
+some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 score, retval = sensor_model.assess(cm, (some_pose, sensor_angles, sensor_settings["s_noise"]))
 jnp.exp(score)
 
@@ -1530,8 +1535,7 @@ def full_model_kernel(motion_settings, s_noise, state, control):
 def full_model(motion_settings, s_noise):
     return (
         full_model_kernel
-        .partial_apply(motion_settings)
-        .partial_apply(s_noise)
+        .partial_apply(motion_settings, s_noise)
         .map(diag)
         .scan()(robot_inputs["start"], robot_inputs["controls"])
         @ "steps"

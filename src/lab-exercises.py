@@ -31,7 +31,9 @@
 #
 # ## Setup
 #
-# Here are two large notebook cells.  The first cell declares all the reusable components from the tutorial (modeling and inference gadgets, and plotting abstractions), making them globally available while performing no significant computation.  The second cell gathers the main visualization recipes in a series of comments.
+# Here are two large notebook cells.  The first cell declares all the reusable components from the tutorial (modeling and inference gadgets, and plotting abstractions), making them globally available while performing no significant computation.  The second cell gathers the main visualization recipes in a series of commented blocks; each block can be run independently.
+#
+# After running the first of these, skip below to the following sections.
 # %%
 # Global includes
 
@@ -273,8 +275,6 @@ def pose_widget(label, initial_pose, **opts):
                 """)}), **opts)
         | Plot.initialState({label: initial_pose.as_dict()}, sync=label)
     )
-
-some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 
 
 # Ideal sensors
@@ -1093,7 +1093,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 
 # %% [markdown]
-# Here are some graphics gadgets for your copy-and-pasting.
+# Here are the graphics gadgets.
 
 # %%
 # World plot
@@ -1106,12 +1106,12 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # Pose plot
 
+# some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 # Plot.html("Click-drag on pose to change location.  Shift-click-drag on pose to change heading.") | (
 #     world_plot
 #     + pose_widget("pose", some_pose, color="blue")
 # ) | Plot.html(js("`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
 
-# key = jax.random.key(0)
 # some_poses = jax.vmap(random_pose)(jax.random.split(key, 20))
 # (
 #     world_plot
@@ -1122,6 +1122,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 
 # Ideal sensor plot
 
+# some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 # (
 #     (
 #         world_plot
@@ -1137,7 +1138,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 #     })
 # )
 
-# key, sub_key = jax.random.spit(key)
+# key, sub_key = jax.random.split(key)
 # some_poses = jax.vmap(random_pose)(jax.random.split(sub_key, 20))
 # some_readings = jax.vmap(ideal_sensor)(some_poses)
 # Plot.Frames([
@@ -1153,6 +1154,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # Noisy sensor plot
 
 # key, k1, k2 = jax.random.split(key, 3)
+# some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
 # def on_slider_change(widget, _):
 #     update_noisy_sensors(widget, "pose", "noise_slider")
 # (
