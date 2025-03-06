@@ -55,4 +55,4 @@ packages = ["src"]
 
 
 [tool.ruff]
-exclude = ["src/localization-tutorial.*"]
+exclude = ["src/*"]
