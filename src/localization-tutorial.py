@@ -2395,7 +2395,7 @@ def grid_bwd_proposal(new_sample, args):
 # %%
 def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, observations):
     base_grid = make_poses_grid_array(
-        jnp.array([M_grid / 2, M_grid / 2]).T,
+        jnp.array([-M_grid / 2, M_grid / 2]).T,
         N_grid
     )
     return SISwithRejuvenation(
