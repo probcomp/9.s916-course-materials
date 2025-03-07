@@ -720,7 +720,10 @@ def step_model(motion_settings, start, control):
     return physical_step(start.p, p, hd)
 
 degrees = jnp.pi / 180
-default_motion_settings = {"p_noise": 0.5, "hd_noise": 10 * degrees}
+default_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 1 * degrees
+}
 
 @genjax.gen
 def path_model(motion_settings):
@@ -787,8 +790,8 @@ motion_settings_low_deviation = {
     "hd_noise": (1 / 10) * degrees,
 }
 motion_settings_high_deviation = {
-    "p_noise": 0.25,
-    "hd_noise": 1 * degrees,
+    "p_noise": 0.5,
+    "hd_noise": 3 * degrees,
 }
 
 key = jax.random.key(0)

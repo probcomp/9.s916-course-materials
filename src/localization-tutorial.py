@@ -1371,7 +1371,10 @@ def step_model(motion_settings, start, control):
 
 # Set the motion settings
 degrees = jnp.pi / 180
-default_motion_settings = {"p_noise": 0.5, "hd_noise": 10 * degrees}
+default_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 1 * degrees
+}
 
 # %% [markdown]
 # The reader is especially encouraged, in the following widget, to drag the attempted step beyond a wall, to get a feel for how this model handles the physics.
@@ -1722,8 +1725,8 @@ motion_settings_low_deviation = {
     "hd_noise": (1 / 10) * degrees,
 }
 motion_settings_high_deviation = {
-    "p_noise": 0.25,
-    "hd_noise": 1 * degrees,
+    "p_noise": 0.5,
+    "hd_noise": 3 * degrees,
 }
 
 key, k_low, k_high = jax.random.split(key, 3)
