@@ -1940,7 +1940,7 @@ high_deviation_paths = jax.vmap(get_path)(traces_generated_high_deviation)
 ) & (
     world_plot
     + [
-        pose_plots(pose, color="blue", opacity=0.1)
+        pose_plots(pose, color="green", opacity=0.1)
         for pose in high_deviation_paths[:20]
     ]
 )
