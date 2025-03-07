@@ -37,16 +37,14 @@
 
 import json
 import genstudio.plot as Plot
-import itertools
 import jax
 import jax.numpy as jnp
 import genjax
-import os
 from genjax import SelectionBuilder as S
 from genjax import ChoiceMapBuilder as C
 from genjax.typing import Array, FloatArray, PRNGKey, IntArray
 from penzai import pz
-from typing import Any, Iterable, TypeVar, Generic, Callable
+from typing import TypeVar, Generic, Callable
 from genstudio.plot import js
 
 html = Plot.Hiccup
@@ -1719,9 +1717,6 @@ animate_full_trace(tr)
 #
 # Let us generate some fixed synthetic motion data that, for pedagogical purposes, we will work with as if it were the actual path of the robot.  We will generate two versions, one each with low or high motion deviation.
 # %%
-# HERE is a great place to update `sensor_settings["s_noise"]` if you wish,
-# about to construct some "data" using it.
-
 motion_settings_low_deviation = {
     "p_noise": 0.05,
     "hd_noise": (1 / 10) * degrees,
@@ -1824,11 +1819,11 @@ trace_high, log_weight_high = full_model.importance(
 
 (
     (
-        html("fresh path sample", "fixed low-motion deviation sensor data")
+        html("fresh path sample", "fixed low motion-deviation sensor data")
         | animate_full_trace(trace_low, frame_key="frame")
         | html(f"log_weight: {log_weight_low}")
     ) & (
-        html("fresh path sample", "fixed high-motion deviation sensor data")
+        html("fresh path sample", "fixed high motion-deviation sensor data")
         | animate_full_trace(trace_high, frame_key="frame")
         | html(f"log_weight: {log_weight_high}")
     )
@@ -1898,11 +1893,11 @@ trace_path_integrated_observations_high_deviation, log_weight_high = full_model.
 
 (
     (
-        html("integrated path from controls", "fixed low-motion deviation sensor data")
+        html("integrated path from controls", "fixed low motion-deviation sensor data")
         | animate_full_trace(trace_path_integrated_observations_low_deviation, frame_key="frame")
         | html(f"log_weight: {log_weight_low}")
     ) & (
-        html("integrated path from controls", "fixed high-motion deviation sensor data")
+        html("integrated path from controls", "fixed high motion-deviation sensor data")
         | animate_full_trace(trace_path_integrated_observations_high_deviation, frame_key="frame")
         | html(f"log_weight: {log_weight_high}")
     )
