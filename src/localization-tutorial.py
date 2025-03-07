@@ -2047,21 +2047,37 @@ def importance_resample_unjitted(
 importance_resample = jax.jit(importance_resample_unjitted, static_argnums=(4, 5))
 
 
-def path_to_polyline(path, **options):
-    if len(path.p.shape) > 1:
-        x_coords = path.p[:, 0]
-        y_coords = path.p[:, 1]
-        return Plot.line({"x": x_coords, "y": y_coords}, {"curve": "linear", **options})
-    else:
-        return Plot.dot([path.p], fill=options["stroke"], r=2, **options)
+def pytree_transpose(list_of_pytrees):
+  """
+  Converts a list of pytrees of identical structure into a single pytree of lists.
+  """
+  return jax.tree.map(lambda *xs: jnp.array(list(xs)), *list_of_pytrees)
 
-def plot_inference_result(title, samples_label, posterior_paths, target_path):
+def plot_inference_result(title, samples_label, posterior_paths, target_path, history_paths=None):
     return (
         html(*title)
         | (
             world_plot
+            + (
+                [
+                    Plot.line(
+                        {"x": path.p[:, 0], "y": path.p[:, 1]},
+                        curve="linear",
+                        opacity=0.05,
+                        strokeWidth=2,
+                        stroke="red"
+                    )
+                    for path in history_paths
+                ] if history_paths else []
+            )
             + [
-                path_to_polyline(path, opacity=0.2, strokeWidth=2, stroke="green")
+                Plot.line(
+                    {"x": path.p[:, 0], "y": path.p[:, 1]},
+                    curve="linear",
+                    opacity=0.2,
+                    strokeWidth=2,
+                    stroke="green"
+                )
                 for path in posterior_paths
             ]
             + pose_plots(
@@ -2070,7 +2086,9 @@ def plot_inference_result(title, samples_label, posterior_paths, target_path):
             + Plot.color_map({
                 samples_label: "green",
                 "path to be inferred": "black",
-            })
+            } | (
+               {"culled paths": "red"} if history_paths else {}
+            ))
         )
     )
 
@@ -2199,37 +2217,33 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
         """
 
         def __init__(
-            self, N: int, end: StateT, samples: genjax.Trace[StateT], indices: IntArray
+            self, end: StateT, samples: genjax.Trace[StateT], indices: IntArray, rejuvenated: genjax.Trace[StateT]
         ):
-            self.N = N
             self.end = end
-            self.samples = samples
+            self.samples = samples.get_retval()
             self.indices = indices
+            self.rejuvenated = rejuvenated.get_retval()
+            self.N = len(end)
+            self.T = len(self.rejuvenated)
 
         def flood_fill(self) -> list[list[StateT]]:
-            samples = self.samples.get_retval()
-            active_paths = [[p] for p in samples[0]]
             complete_paths = []
-            for i in range(1, len(samples)):
+            active_paths = [[p] for p in self.samples[0]]
+            for i in range(1, self.T):
                 indices = self.indices[i - 1]
-                counts = jnp.bincount(indices, length=self.N)
                 new_active_paths = self.N * [None]
-                for j in range(self.N):
-                    if counts[j] == 0:
+                for (j, count) in zip(range(self.N), jnp.bincount(indices, length=self.N)):
+                    if count == 0:
                         complete_paths.append(active_paths[j])
-                    new_active_paths[j] = active_paths[indices[j]] + [samples[i][j]]
+                    new_active_paths[j] = active_paths[indices[j]] + [self.samples[i][j]]
                 active_paths = new_active_paths
-
             return complete_paths + active_paths
 
         def backtrack(self) -> list[list[StateT]]:
             paths = [[p] for p in self.end]
-            samples = self.samples.get_retval()
-            for i in reversed(range(len(samples))):
-                for j in range(len(paths)):
-                    paths[j].append(samples[i][self.indices[i][j].item()])
-            for p in paths:
-                p.reverse()
+            for i in reversed(range(self.T - 1)):
+                for j in range(self.N):
+                    paths[j].insert(0, self.rejuvenated[i][self.indices[i + 1][j]])
             return paths
 
 
@@ -2255,12 +2269,12 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
                 )
             else:
                 rejuvenated, new_log_weights = resamples, jnp.zeros(log_weights.shape)
-            return (rejuvenated.get_retval(), new_log_weights), (samples, indices)
+            return (rejuvenated.get_retval(), new_log_weights), (samples, indices, rejuvenated)
 
         init_array = jax.tree.map(
             lambda a: jnp.broadcast_to(a, (N,) + a.shape), self.init
         )
-        (end, _), (samples, indices) = jax.lax.scan(
+        (end, _), (samples, indices, rejuvenated) = jax.lax.scan(
             step,
             (init_array, jnp.zeros(N)),
             (
@@ -2269,7 +2283,7 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
                 self.observations,
             ),
         )
-        return SISwithRejuvenation.Result(N, end, samples, indices)
+        return SISwithRejuvenation.Result(end, samples, indices, rejuvenated)
 
 # %%
 def localization_sis(motion_settings, s_noise, observations):
@@ -2286,7 +2300,7 @@ def localization_sis(motion_settings, s_noise, observations):
 
 
 # %% [markdown]
-# Below, totality of sampled partial paths are shown in green, those surviving to the end appearing the thickest, while the ground truth is shown in black.
+# Below, the paths that died in the sequential resampling are shown in red.
 
 # %%
 key, k1, k2 = jax.random.split(key, 3)
@@ -2304,19 +2318,15 @@ sis_result_high = localization_sis(
 plot_inference_result(
     ("SIS on low motion-deviation data",),
     "sequential importance resamples",
-    [
-        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
-        for path in sis_result_low.flood_fill()
-    ],
-    path_low_deviation
+    [pytree_transpose(path) for path in sis_result_low.backtrack()],
+    path_low_deviation,
+    history_paths=[pytree_transpose(path) for path in sis_result_low.flood_fill()]
 ) & plot_inference_result(
     ("SIS on high motion-deviation data",),
     "sequential importance resamples",
-    [
-        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
-        for path in sis_result_high.flood_fill()
-    ],
-    path_high_deviation
+    [pytree_transpose(path) for path in sis_result_high.backtrack()],
+    path_high_deviation,
+    history_paths=[pytree_transpose(path) for path in sis_result_high.flood_fill()]
 )
 # %% [markdown]
 # As already noted, after winnowing poor quality particles and replacing them with copies of the better ones, particle diversity suffers.  The technique of *rejuvenation* is to perturb the results of resampling to restore this diversity.  At the same time, it can perform operations that improve the sample quality.  In this case, we search a small grid of points near the most recent step for improvement in the score.
@@ -2429,17 +2439,13 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 plot_inference_result(
     ("SIS without rejuvenation", "high motion-deviation data"),
     "samples",
-    [
-        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
-        for path in sis_result.flood_fill()
-    ],
-    path_high_deviation
+    [pytree_transpose(path) for path in sis_result.backtrack()],
+    path_high_deviation,
+    history_paths=[pytree_transpose(path) for path in sis_result.flood_fill()]
 ) & plot_inference_result(
     ("SIS with SMCP3 grid rejuvenation", "high motion-deviation data"),
     "samples",
-    [
-        Pose(jnp.array([pose.p for pose in path]), [pose.hd for pose in path])
-        for path in smcp3_result.flood_fill()
-    ],
-    path_high_deviation
+    [pytree_transpose(path) for path in smcp3_result.backtrack()],
+    path_high_deviation,
+    history_paths=[pytree_transpose(path) for path in smcp3_result.flood_fill()]
 )
