@@ -1725,8 +1725,8 @@ motion_settings_low_deviation = {
     "hd_noise": (1 / 10) * degrees,
 }
 motion_settings_high_deviation = {
-    "p_noise": 0.5,
-    "hd_noise": 3 * degrees,
+    "p_noise": 0.4,
+    "hd_noise": 2 * degrees,
 }
 
 key, k_low, k_high = jax.random.split(key, 3)
@@ -2228,14 +2228,13 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
 
         def flood_fill(self) -> list[list[StateT]]:
             complete_paths = []
-            active_paths = [[p] for p in self.samples[0]]
-            for i in range(1, self.T):
-                indices = self.indices[i - 1]
+            active_paths = self.N * [[]]
+            for i in range(self.T):
                 new_active_paths = self.N * [None]
-                for (j, count) in zip(range(self.N), jnp.bincount(indices, length=self.N)):
+                for (j, count) in enumerate(jnp.bincount(self.indices[i], length=self.N)):
                     if count == 0:
-                        complete_paths.append(active_paths[j])
-                    new_active_paths[j] = active_paths[indices[j]] + [self.samples[i][j]]
+                        complete_paths.append(active_paths[j] + [self.samples[i][j]])
+                    new_active_paths[j] = active_paths[self.indices[i][j]] + [self.rejuvenated[i][j]]
                 active_paths = new_active_paths
             return complete_paths + active_paths
 
@@ -2309,8 +2308,6 @@ N_particles = 20
 sis_result_low = localization_sis(
     motion_settings_low_deviation, sensor_settings["s_noise"], observations_low_deviation
 ).run(k1, N_particles)
-
-N_particles = 100
 sis_result_high = localization_sis(
     motion_settings_high_deviation, sensor_settings["s_noise"], observations_high_deviation
 ).run(k2, N_particles)
@@ -2424,7 +2421,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, s_noise, M_grid, N_grid, o
 # The following plots compare the performance of this local grid search rejuvenation scheme (first) versus vanilla sequential importance sampling (second).
 
 # %%
-N_particles = 100
+N_particles = 20
 M_grid = jnp.array([0.5, 0.5, (3 / 10) * degrees])
 N_grid = jnp.array([15, 15, 15])
 
