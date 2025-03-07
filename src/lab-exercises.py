@@ -33,7 +33,7 @@
 #
 # Here are two large notebook cells.  The first cell declares all the reusable components from the tutorial (modeling and inference gadgets, and plotting abstractions), making them globally available while performing no significant computation.  The second cell gathers the main visualization recipes in a series of commented blocks; each block can be run independently.
 #
-# After running the first of these, skip below to the following sections.
+# After running the first of these cells, skip below to the following sections, which contain the exercises *per se*.
 # %%
 # Global includes
 
@@ -1802,3 +1802,150 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 #     path_high_deviation,
 #     history_paths=[pytree_transpose(path) for path in smcp3_result.flood_fill()]
 # )
+
+# %% [markdown]
+# ## Exercise 3
+
+# %% [markdown]
+# The following two cells work together:
+# * the first declares reproducible state;
+# * the second generates a trace, runs inference over its sensor data, and displays all the results.
+
+# %%
+# Set reproducible state here!
+
+key = jax.random.key(1)
+
+
+# Data generation params
+
+world_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 0.5 * degrees,
+}
+world_sensor_noise = 0.3
+
+
+# Inference params
+
+model_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 1 * degrees
+}
+model_sensor_noise = 0.1
+
+# SIR
+N_presamples = 2000
+N_samples = 20
+
+# SMCP3
+N_particles = 20
+M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
+N_grid = jnp.array([15, 15, 15])
+
+# %%
+key, k1, k2, k3 = jax.random.split(key, 4)
+
+some_trace = full_model.simulate(k1, (world_motion_settings, world_sensor_noise))
+some_path = get_path(some_trace)
+some_observations = get_sensors(some_trace)
+some_constraints = C["steps", "sensor", "distance"].set(some_observations)
+
+SIR_posterior = importance_resample(
+    k2, some_constraints, model_motion_settings, model_sensor_noise, N_presamples, N_samples
+)
+
+smcp3_result = localization_sis_plus_grid_rejuv(
+    model_motion_settings, model_sensor_noise, M_grid, N_grid, some_observations
+).run(k3, N_particles)
+
+(
+    animate_full_trace(some_trace)
+    | (
+        plot_inference_result(
+            ("global importance resampling",),
+            "samples",
+            jax.vmap(get_path)(SIR_posterior),
+            some_path
+        ) & plot_inference_result(
+            ("SIS with SMCP3 grid rejuvenation",),
+            "samples",
+            [pytree_transpose(path) for path in smcp3_result.backtrack()],
+            some_path,
+            history_paths=[pytree_transpose(path) for path in smcp3_result.flood_fill()]
+        )
+    )
+)
+
+# %% [markdown]
+# The parameters have the following meanings.
+# 1. The world motion deviation corresponds to *how wide our hypotheses will need to range* in order to infer the path.
+# 2. The world sensor noise corresponds to *how reliable the data are* for doing this inference.
+# 3. The model motion deviation corresponds to *how wide our prior* over paths is.
+# 4. The model sensor noise corresponds to *how tolerant versus avoidant* we are of incongruous data.
+#
+# By varying the state in the first cell, investigate the following issues.  **To report your findings, copy-paste suitable reproducible state into the cells below, and add sufficient text/comments for the reader to follow.**
+# 1. Low world motion deviation and high world sensor noise:
+#    * There is not much reliable information to work with, so inference does little to bias samples from the prior towards the posterior.  However, the prior is already somewhat close to the posterior, so global SIR appears to do well enough.  Although SMCP3 nails the answer, it does so at much greater computational expense.
+# 2. High world motion deviation and low world sensor noise:
+#    * The reliable information clearly tells us our inference to do *something*.  However, the prior being far from the posterior, SIR has trouble producing good hypotheses, while SMCP3 is able to search for them.
+# 3. In the prior two scenarios, when might tighter/looser deviation/noise help/hurt inference?
+# 4. What inference computational cost (`N_this`, `N_that`) seems to be enough?
+
+# %%
+key = jax.random.key(0)
+
+world_motion_settings = {
+    "p_noise": 0.05,
+    "hd_noise": 0.1 * degrees,
+}
+world_sensor_noise = 0.75
+
+model_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 1 * degrees
+}
+model_sensor_noise = 0.1
+
+# SIR
+N_presamples = 2000
+N_samples = 20
+
+# SMCP3
+N_particles = 20
+M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
+N_grid = jnp.array([15, 15, 15])
+
+# %%
+key = jax.random.key(2)
+
+world_motion_settings = {
+    "p_noise": 0.5,
+    "hd_noise": 1.5 * degrees,
+}
+world_sensor_noise = 0.05
+
+model_motion_settings = {
+    "p_noise": 0.15,
+    "hd_noise": 1 * degrees
+}
+model_sensor_noise = 0.1
+
+# SIR
+N_presamples = 2000
+N_samples = 20
+
+# SMCP3
+N_particles = 20
+M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
+N_grid = jnp.array([15, 15, 15])
+
+# %%
+# Clear label/comments goes here.
+
+# Copy of modified reproducible state cell goes here.
+
+# %%
+# Another here...
+
+# And so on...
