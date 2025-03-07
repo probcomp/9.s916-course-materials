@@ -2432,7 +2432,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 
 # %%
 N_particles = 20
-M_grid = jnp.array([0.5, 0.5, (3 / 10) * degrees])
+M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
 N_grid = jnp.array([15, 15, 15])
 
 key, k1, k2 = jax.random.split(key, 3)
