@@ -1871,7 +1871,7 @@ log_weight_high - trace_high.project(sub_key, S["steps", "sensor", "distance"])
 #
 # We return to how the model offers a numerical benchmark for how good a fit the integrated path is.
 #
-# In words, the data are incongruously unlikely for the integrated path.  The (log) density of the measurement data, given the integrated path...
+# In words, the integrated path has incongruously low likelihood for the data.  The (log) density of the measurement data, given the integrated path...
 
 # %%
 def constraint_from_path(path):
@@ -1889,12 +1889,12 @@ key, k1, k2 = jax.random.split(key, 3)
 trace_path_integrated_observations_low_deviation, log_weight_low = full_model.importance(
     k1,
     constraints_path_integrated | constraints_low_deviation,
-    (motion_settings_low_deviation, sensor_settings["s_noise"]),
+    (model_motion_settings, model_sensor_noise),
 )
 trace_path_integrated_observations_high_deviation, log_weight_high = full_model.importance(
     k2,
     constraints_path_integrated | constraints_high_deviation,
-    (motion_settings_high_deviation, sensor_settings["s_noise"]),
+    (model_motion_settings, model_sensor_noise),
 )
 
 (
@@ -1909,44 +1909,50 @@ trace_path_integrated_observations_high_deviation, log_weight_high = full_model.
     )
 ) | Plot.Slider("frame", 0, T, fps=2)
 # %% [markdown]
-# ...more closely resembles the density of these data back-fitted onto typical (random) paths of the model.
+# (the `log_weight` reported just above this cell) ...more closely resembles the densities of these data back-fitted onto typical (random) paths of the model, than the (log) densities of data typically produced by the full model run in its natural manner:
 
 
 # %%
 N_samples = 200
 
-key, k1, k2 = jax.random.split(key, 3)
+key, k1, k2, k3, k4 = jax.random.split(key, 5)
+
 traces_generated_low_deviation, low_weights = jax.vmap(
     full_model.importance, in_axes=(0, None, None)
 )(
     jax.random.split(k1, N_samples),
     constraints_low_deviation,
-    (motion_settings_low_deviation, sensor_settings["s_noise"]),
+    (model_motion_settings, model_sensor_noise),
 )
 traces_generated_high_deviation, high_weights = jax.vmap(
     full_model.importance, in_axes=(0, None, None)
 )(
     jax.random.split(k2, N_samples),
     constraints_high_deviation,
-    (motion_settings_high_deviation, sensor_settings["s_noise"]),
+    (model_motion_settings, model_sensor_noise),
 )
 
-low_deviation_paths = jax.vmap(get_path)(traces_generated_low_deviation)
-high_deviation_paths = jax.vmap(get_path)(traces_generated_high_deviation)
+traces_simulated = jax.vmap(
+    full_model.simulate, in_axes=(0, None)
+)(
+    jax.random.split(k3, N_samples),
+    (model_motion_settings, model_sensor_noise),
+)
+simulated_weights = jax.vmap(
+    lambda trace, k: trace.project(k, S["steps", "sensor", "distance"])
+)(traces_simulated, jax.random.split(k4, N_samples))
 
 (
-    world_plot
-    + [
-        pose_plots(pose, color="green", opacity=0.1)
-        for pose in low_deviation_paths[:20]
-    ]
+    html("likelihoods of low motion-deviation data")
+    | Plot.histogram(values=low_weights, thresholds=10)
 ) & (
-    world_plot
-    + [
-        pose_plots(pose, color="green", opacity=0.1)
-        for pose in high_deviation_paths[:20]
-    ]
+    html("likelihoods of high motion-deviation data")
+    | Plot.histogram(values=high_weights, thresholds=10)
+) & (
+    html("likelihoods of random data")
+    | Plot.histogram(values=simulated_weights, thresholds=10)
 )
+
 
 # %% [markdown]
 # ## Generic strategies for inference
