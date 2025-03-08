@@ -1804,6 +1804,48 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 # )
 
 # %% [markdown]
+# ## Exercise 1
+#
+# Lab 1 Exercise 1. Students run gridding with a few custom priors, and compare the results --- and are asked to write their own prior. A simple automated test checks that the posterior is roughly the right thing we expect.
+# - Do you mean we provide some function that takes their posterior samples and scores their fit?  (Maybe relative to some exact solution of the posterior?)  Or something else?
+# - Yes — we precompute a high quality grid approximation, and save it, and compare it to what the students store into some variable.  Comparison can be sup norm between their histogram and the truth.
+# - On Ex1, sup-norm comparison would be just as easy to code as L^p-comparison for any p in [1,infty].  Could be fun to visualize.
+# - I’d like to see Lp slider for fun :) but maybe not top priority
+
+# %% [markdown]
+# We consider extending the model in various ways.
+#
+# 1. Write a small generative model (small map?) that can easily use with grid inference to get a posterior.
+# 2. Choose another custom prior over robot poses, and express it in GenJAX.  Demonstrate posterior inference starting from this prior, given a set of sensor readings.
+# 3. World is uniform sensor while model is still Gaussian sensor error.  If hyperprior over `sensor_noise` is included, inference should stretch out Gaussians to cover the uniform.
+# 4. ...
+# 5. "A simple automated test checks that the posterior is roughly the right thing we expect.  ...  Precompute some high-quality grid approximation.  Comparison can be L^p-norm between their histogram and the truth."
+# 6. ...
+# 7. Using SMCP3 as a blueprint, code the MH rule (leave the weight alone).  Make rejuvenation that instead runs `N_MH` times.  See how it compares (accuracy, speed).
+# 8. The current SMCP3 backward proposal chooses from the prior over the reverse grid.  The "locally optimal" result choses from the posterior over the reverse grid, given the forward proposal's behavior.  Code up this posterior and see how it compares (accuracy, speed).
+
+# %% [markdown]
+# ## Exercise 2
+#
+# Lab 1 Exercise 2. Students write MH by hand, and check that it sort-of works for single-pose localization in a small map that's easy, but doesn't work that well in a larger map. Simple tests of variance of samples, etc, compare their results to results we've computed from a debugged implementation.
+# - I’d like a way to check that MH was correctly implemented, even if the quality of posterior approximation that it gives is poor.
+#   One approach could be to run MH 1M times and compare the histogram we precomputed to the high-repetition histogram from the students’ submission.
+#   Another useful approach could be to implement “simulation based calibration”: a test proposed by the Stan folks, in which one does the following:
+#   - generates synthetic latents and synthetic data given those latents
+#   - (repeatedly) do inference given the synthetic data
+#   - compare the difference of these two distributions in the latents, ie leverage the fact that the data-averaged posterior (exact inference output distribution, given random synthetic data under the model) is the prior
+#   The Stalts paper on this provides one approach:
+#   https://arxiv.org/abs/1804.06788
+#   and Cameron & Feras’ paper on the stochastic rank statistic (“exact goodness of fit tests for high dimensional discrete distributions”) gives a family of tests we can use directly:
+#   https://www.cs.cmu.edu/~fsaad/assets/papers/2019-SaadEtAl-AISTATS.pdf
+#   WDYT?
+# - That "simulation based calibration" is a frigging lovely idea.  Kind of unless errors in the components magically cancel, you can catch many of them.  Moreover, you can test all your components up this way, as a design due diligence you really should.  For which yadda yadda viz tools.
+# - I’d prioritize the Geweke blog post thing, then SBC (to tune #iters) — mayyybe on just the X coordinate, or the marginal distribution on the score
+# - For MH — one trick, related to SBC, is this:
+#   https://lips.cs.princeton.edu/testing-mcmc-code-part-2-integration-tests/
+#   I quite like it (and IIRC was using it before the blog post)
+
+# %% [markdown]
 # ## Exercise 3
 
 # %% [markdown]
@@ -1893,6 +1935,9 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 # 4. What inference computational cost (`N_this`, `N_that`) seems to be enough?
 
 # %%
+# DELETE ME
+# low world motion deviation, high world sensor noise
+
 key = jax.random.key(0)
 
 world_motion_settings = {
@@ -1917,6 +1962,9 @@ M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
 N_grid = jnp.array([15, 15, 15])
 
 # %%
+# DELETE ME
+# high world motion deviation, low world sensor noise
+
 key = jax.random.key(2)
 
 world_motion_settings = {
