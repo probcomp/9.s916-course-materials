@@ -8,9 +8,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.16.7
 #   kernelspec:
-#     display_name: default
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -1804,46 +1804,25 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 # )
 
 # %% [markdown]
-# ## Exercise 1
+# ## Exercise 0
 #
-# Lab 1 Exercise 1. Students run gridding with a few custom priors, and compare the results --- and are asked to write their own prior. A simple automated test checks that the posterior is roughly the right thing we expect.
-# - Do you mean we provide some function that takes their posterior samples and scores their fit?  (Maybe relative to some exact solution of the posterior?)  Or something else?
-# - Yes — we precompute a high quality grid approximation, and save it, and compare it to what the students store into some variable.  Comparison can be sup norm between their histogram and the truth.
-# - On Ex1, sup-norm comparison would be just as easy to code as L^p-comparison for any p in [1,infty].  Could be fun to visualize.
-# - I’d like to see Lp slider for fun :) but maybe not top priority
+# Lab 1 Exercise 0: Visualize results of different inference algorithms and write 2 sentences about each.
 
 # %% [markdown]
-# We consider extending the model in various ways.
+# ## Exercise 1
 #
-# 1. Write a small generative model (small map?) that can easily use with grid inference to get a posterior.
-# 2. Choose another custom prior over robot poses, and express it in GenJAX.  Demonstrate posterior inference starting from this prior, given a set of sensor readings.
-# 3. World is uniform sensor while model is still Gaussian sensor error.  If hyperprior over `sensor_noise` is included, inference should stretch out Gaussians to cover the uniform.
-# 4. ...
-# 5. "A simple automated test checks that the posterior is roughly the right thing we expect.  ...  Precompute some high-quality grid approximation.  Comparison can be L^p-norm between their histogram and the truth."
-# 6. ...
-# 7. Using SMCP3 as a blueprint, code the MH rule (leave the weight alone).  Make rejuvenation that instead runs `N_MH` times.  See how it compares (accuracy, speed).
-# 8. The current SMCP3 backward proposal chooses from the prior over the reverse grid.  The "locally optimal" result choses from the posterior over the reverse grid, given the forward proposal's behavior.  Code up this posterior and see how it compares (accuracy, speed).
+# Lab 1 Exercise 1: Write a few custom priors. Produce traces of the new generative function and visualize them.
+
+# %%
+# Complete Execrcise 1 here
 
 # %% [markdown]
 # ## Exercise 2
 #
-# Lab 1 Exercise 2. Students write MH by hand, and check that it sort-of works for single-pose localization in a small map that's easy, but doesn't work that well in a larger map. Simple tests of variance of samples, etc, compare their results to results we've computed from a debugged implementation.
-# - I’d like a way to check that MH was correctly implemented, even if the quality of posterior approximation that it gives is poor.
-#   One approach could be to run MH 1M times and compare the histogram we precomputed to the high-repetition histogram from the students’ submission.
-#   Another useful approach could be to implement “simulation based calibration”: a test proposed by the Stan folks, in which one does the following:
-#   - generates synthetic latents and synthetic data given those latents
-#   - (repeatedly) do inference given the synthetic data
-#   - compare the difference of these two distributions in the latents, ie leverage the fact that the data-averaged posterior (exact inference output distribution, given random synthetic data under the model) is the prior
-#   The Stalts paper on this provides one approach:
-#   https://arxiv.org/abs/1804.06788
-#   and Cameron & Feras’ paper on the stochastic rank statistic (“exact goodness of fit tests for high dimensional discrete distributions”) gives a family of tests we can use directly:
-#   https://www.cs.cmu.edu/~fsaad/assets/papers/2019-SaadEtAl-AISTATS.pdf
-#   WDYT?
-# - That "simulation based calibration" is a frigging lovely idea.  Kind of unless errors in the components magically cancel, you can catch many of them.  Moreover, you can test all your components up this way, as a design due diligence you really should.  For which yadda yadda viz tools.
-# - I’d prioritize the Geweke blog post thing, then SBC (to tune #iters) — mayyybe on just the X coordinate, or the marginal distribution on the score
-# - For MH — one trick, related to SBC, is this:
-#   https://lips.cs.princeton.edu/testing-mcmc-code-part-2-integration-tests/
-#   I quite like it (and IIRC was using it before the blog post)
+# Lab 1 Exercise 2: Write Metropolis-Hastings (MH) by hand and write tests to verify its correctness. Use it by running it 1 million times and visualize the results
+
+# %%
+# Complete Execrcise 2 here
 
 # %% [markdown]
 # ## Exercise 3
@@ -1852,6 +1831,21 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 # The following two cells work together:
 # * the first declares reproducible state;
 # * the second generates a trace, runs inference over its sensor data, and displays all the results.
+#
+#
+# The parameters have the following meanings.
+# 1. The world motion deviation corresponds to *how wide our hypotheses will need to range* in order to infer the path.
+# 2. The world sensor noise corresponds to *how reliable the data are* for doing this inference.
+# 3. The model motion deviation corresponds to *how wide our prior* over paths is.
+# 4. The model sensor noise corresponds to *how tolerant versus avoidant* we are of incongruous data.
+#
+# By varying the state in the first cell, investigate the following issues.  **To report your findings, copy-paste suitable reproducible state into the cells below, and add sufficient text/comments for the reader to follow.**
+# 1. Low world motion deviation and high world sensor noise:
+#    * There is not much reliable information to work with, so inference does little to bias samples from the prior towards the posterior.  However, the prior is already somewhat close to the posterior, so global SIR appears to do well enough.  Although SMCP3 nails the answer, it does so at much greater computational expense.
+# 2. High world motion deviation and low world sensor noise:
+#    * The reliable information clearly tells us our inference to do *something*.  However, the prior being far from the posterior, SIR has trouble producing good hypotheses, while SMCP3 is able to search for them.
+# 3. In the prior two scenarios, when might tighter/looser deviation/noise help/hurt inference?
+# 4. What inference computational cost (`N_this`, `N_that`) seems to be enough?
 
 # %%
 # Set reproducible state here!
@@ -1918,21 +1912,6 @@ smcp3_result = localization_sis_plus_grid_rejuv(
         )
     )
 )
-
-# %% [markdown]
-# The parameters have the following meanings.
-# 1. The world motion deviation corresponds to *how wide our hypotheses will need to range* in order to infer the path.
-# 2. The world sensor noise corresponds to *how reliable the data are* for doing this inference.
-# 3. The model motion deviation corresponds to *how wide our prior* over paths is.
-# 4. The model sensor noise corresponds to *how tolerant versus avoidant* we are of incongruous data.
-#
-# By varying the state in the first cell, investigate the following issues.  **To report your findings, copy-paste suitable reproducible state into the cells below, and add sufficient text/comments for the reader to follow.**
-# 1. Low world motion deviation and high world sensor noise:
-#    * There is not much reliable information to work with, so inference does little to bias samples from the prior towards the posterior.  However, the prior is already somewhat close to the posterior, so global SIR appears to do well enough.  Although SMCP3 nails the answer, it does so at much greater computational expense.
-# 2. High world motion deviation and low world sensor noise:
-#    * The reliable information clearly tells us our inference to do *something*.  However, the prior being far from the posterior, SIR has trouble producing good hypotheses, while SMCP3 is able to search for them.
-# 3. In the prior two scenarios, when might tighter/looser deviation/noise help/hurt inference?
-# 4. What inference computational cost (`N_this`, `N_that`) seems to be enough?
 
 # %%
 # DELETE ME
