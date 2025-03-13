@@ -1808,6 +1808,9 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 #
 # Lab 1 Exercise 0: Visualize results of different inference algorithms and write 2 sentences about each.
 
+# %%
+# Complete Execrcise 0 here
+
 # %% [markdown]
 # ## Exercise 1
 #
