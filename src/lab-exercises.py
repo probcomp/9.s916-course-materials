@@ -1932,7 +1932,7 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 #
 # (Breaking ties in the ordering to determine $I$ is likely unnecessary in the continuous case, but is important in the discrete case: to get it right, choose $U_1, U_2, \ldots, U_N, U$ continuous-uniformly on $[0,1]$, and when $y = x_i$ one declares $I < i$ if and only if $U < U_i$.)
 #
-# **Carry out this program** using the original `sample_MH_one` from the lab notebook as the posterior inference process, paired with each of the priors on the small and large map, and varying `N_MH_steps`.  Your test function could be the $x$-coordinate (or $y$-coordinate, or heading).  How large does `N_MH_steps` need to be in order to achieve "uniform" histogram?  How does this size depend on the choice of map/prior?
+# **Carry out this program** using the original `sample_MH_one` from the lab notebook as the posterior inference process, paired with each of the priors on the small and large map, and varying `N_MH_steps`.  Your test function could be the $x$-coordinate (or $y$-coordinate, or heading), or even the likelihood function.  How large does `N_MH_steps` need to be in order to achieve "uniform" histogram?  How does this size depend on the choice of map/prior?
 
 # %%
 # Complete Execrcise 4 here
