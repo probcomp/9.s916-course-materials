@@ -10,7 +10,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.7
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: default
 #     language: python
 #     name: python3
 # ---
@@ -1806,31 +1806,11 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
 # %% [markdown]
 # ## Exercise 0
 #
-# Lab 1 Exercise 0: Visualize results of different inference algorithms and write 2 sentences about each.
-
-# %%
-# Complete Execrcise 0 here
+# Step through the lab notebook.  Experiment with each inference algorithm (grid search, grid resampling, importance resampling, MCMC for poses; SIR, SIS, SMCP3 for paths) and silently comment to yourself qualitatively on each's performance characteristics.  For what model parameters and data do they work well, and when not, and at what cost?
 
 # %% [markdown]
 # ## Exercise 1
 #
-# Lab 1 Exercise 1: Write a few custom priors. Produce traces of the new generative function and visualize them.
-
-# %%
-# Complete Execrcise 1 here
-
-# %% [markdown]
-# ## Exercise 2
-#
-# Lab 1 Exercise 2: Write Metropolis-Hastings (MH) by hand and write tests to verify its correctness. Use it by running it 1 million times and visualize the results
-
-# %%
-# Complete Execrcise 2 here
-
-# %% [markdown]
-# ## Exercise 3
-
-# %% [markdown]
 # The following two cells work together:
 # * the first declares reproducible state;
 # * the second generates a trace, runs inference over its sensor data, and displays all the results.
@@ -1916,66 +1896,59 @@ smcp3_result = localization_sis_plus_grid_rejuv(
     )
 )
 
-# %%
-# DELETE ME
-# low world motion deviation, high world sensor noise
-
-key = jax.random.key(0)
-
-world_motion_settings = {
-    "p_noise": 0.05,
-    "hd_noise": 0.1 * degrees,
-}
-world_sensor_noise = 0.75
-
-model_motion_settings = {
-    "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
-model_sensor_noise = 0.1
-
-# SIR
-N_presamples = 2000
-N_samples = 20
-
-# SMCP3
-N_particles = 20
-M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
-N_grid = jnp.array([15, 15, 15])
+# %% [markdown]
+# ## Exercise 2
+#
+# Note the file `world_small.json` that describes a simpler "small world" place for the robot to operate.
+#
+# Write some (at least two) custom priors over poses *in the small world*.  Begin by sharing in words the intuitions that they are meant to capture, then implement them with generative functions.  Produce and visualize traces from them.
 
 # %%
-# DELETE ME
-# high world motion deviation, low world sensor noise
+# Complete Execrcise 2 here
 
-key = jax.random.key(2)
-
-world_motion_settings = {
-    "p_noise": 0.5,
-    "hd_noise": 1.5 * degrees,
-}
-world_sensor_noise = 0.05
-
-model_motion_settings = {
-    "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
-model_sensor_noise = 0.1
-
-# SIR
-N_presamples = 2000
-N_samples = 20
-
-# SMCP3
-N_particles = 20
-M_grid = jnp.array([1.0, 1.0, (3 / 10) * degrees])
-N_grid = jnp.array([15, 15, 15])
+# %% [markdown]
+# ## Exercise 3
+#
+# Make the following modifications.
+# 1. The make an additional model for generating "world" sensor data, in which `normal` noise has been replaced with `uniform` noise.
+# 2. Modify `joint_model` within `make_posterior_density_fn` to be *hierarchical*: the `model_noise` parameter (still passed to the original `sensor_model`) is changed from an explicit model parameter to a hyperparamter, drawn inside the model from the hyperprior `genjax.gamma(concentration=2.0, rate=20.0)`.
+# 3. At the same time as (2.), move the `model_noise` argument of `make_posterior_density_fn` to a parameter of the `lambda` expression passed to `jax.jit`, and incorporate its value in the choice map passed into `assess`.
+#
+# Modify some of the inference algorithms to range not over poses, but instead over pairs of pose and noise parameter.  (In the case of MH, remember to modify `do_MH_step` to wiggle the noise parameter too.)
+#
+# Play with the inference and **explain**, given a noise parameter for the data generation, what happens to the `sensor_noise` hyperparameter to get a good fit.
 
 # %%
-# Clear label/comments goes here.
+# Complete Exercise 3 here
 
-# Copy of modified reproducible state cell goes here.
+# %% [markdown]
+# ## Exercise 4
+#
+# How many steps (`N_MH_steps`) does MH need to jiggle a particle to get convergence towards the posterior distribution?  How can we *know* whether this is happening, in order to tune that constant?
+#
+# A simple way to test any posterior inference algorithm relies on the following fact: a posterior distribution is parametric in observed data values (upon which the conditioning took place); integrating the posterior distributions with respect to the prior predictive distribution recovers the prior distribution.  Said in more words, if we sample a latent parameter from the prior, sample observation datum with this latent parameter, and use posterior inference to sample a second latent parameter conditional on this observation datum, then the resulting composite (marginal) distribution over the second latent parameters should be indistinguishable from the prior.  Our code can perform this composition, so all we would need is a way to compare the composite to the prior, or really, any two distributions.
+#
+# In order to compare two distributions $p, q$ on a space $X$, we can instead compare their pushforwards under some test function $f : X \to \mathbf{R}$; that is, we can compare the distribution of values $f(x)$ where $x \sim p$ to the distribution of values $f(y)$ where $y \sim q$, reducing us to comparing two $\mathbf{R}$-valued distributions.  A *rank-based test* for $\mathbf{R}$-valued distributions draws independent samples $x_1, \ldots, x_N \sim p$ and $y \sim q$, sorts the $x_i$, and computes the the index $I$ with $x_I \leq y \leq x_{I+1}$ (formally taking $x_0 = -\infty$); if $p=q$ then we expect such indices $I$ to be uniformly distributed in $\{0,1,\ldots,N\}$.  We generate $M$ such indices $I_1,\ldots,I_M$ (keeping $N$ fixed, thus requiring $MN$ samples from $p$ and $M$ samples from $q$), plot their histogram, and see whether they look uniform.
+#
+# (Breaking ties in the ordering to determine $I$ is likely unnecessary in the continuous case, but is important in the discrete case: to get it right, choose $U_1, U_2, \ldots, U_N, U$ continuous-uniformly on $[0,1]$, and when $y = x_i$ one declares $I < i$ if and only if $U < U_i$.)
+#
+# **Carry out this program** using the original `sample_MH_one` from the lab notebook as the posterior inference process, paired with each of the priors on the small and large map, and varying `N_MH_steps`.  Your test function could be the $x$-coordinate (or $y$-coordinate, or heading).  How large does `N_MH_steps` need to be in order to achieve "uniform" histogram?  How does this size depend on the choice of map/prior?
 
 # %%
-# Another here...
+# Complete Execrcise 4 here
 
-# And so on...
+# %% [markdown]
+# ## Exercise 5
+#
+# Turn to the context of inference over *paths*, given a series of sensor data, as towards the end of the lab notebook.  **Code up** an alternate rejuvenation that performs MH to wiggle the most recent step of the path, leaving the weight unchanged.  (You might refer to the SMCP3 rejuvenation as an overall blueprint, plus the MH code for single-pose localization when working out the last-pose wiggling.)  How does it compare in efficacy and efficiency versus SMCP3?
+
+# %%
+# Complete Exercise 5 here
+
+# %% [markdown]
+# ## Exercise 6
+#
+# The SMCP3 rejuvenation's backward proposal simply guessed reverse grid indices from the prior over that robot step.  According to the theory, one should get more accurate results by instead guessing reverse grid indices from the posterior over that robot step, conditional on the information that the forward proposal sent the pose to the given one.  **Code up** this backwards proposal and comment on its efficacy versus efficiency.  Why might it not give much better results?  (Hint: the sensor noise model is Gaussian, which is self-conjugate.)
+
+# %%
+# Complete Exercise 6 here
