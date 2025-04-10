@@ -85,11 +85,26 @@
 # %% [markdown]
 # ## Exercise 4
 #
-# What properly weighted samplers are.
+# Often tractability issues frustrate our computing with some *target* distribution $p$ on a space of values $X$.  The philosophy of *importance sampling (IS)* is that for some purposes we may instead design some *proposal* distribution $q$ on $X$ and track the discrepancy from $p$ via knowledge of its *Radon--Nikodym (RN) derivative* $\frac{\mathrm{d}p}{\mathrm{d}q}$.  This latter function $\frac{\mathrm{d}p}{\mathrm{d}q} : X \to [0,+\infty]$ is uniquely determined (up to measure zero) by the defining property that $\int_X f(x)\,\mathrm{d}p = \int_X f(x)\,\frac{\mathrm{d}p}{\mathrm{d}q}(x)\,\mathrm{d}q$ for all functions $f$, i.e., it acts as a density function for $p$ when we take $q$ as the reference measure.  In this context, we also refer to the value of the RN derivative as the *importance weight*.
 #
-# Show how rejection sampling promotes them to their targets, provided an explicit bound on the weight.
+# Often knowing $\frac{\mathrm{d}p}{\mathrm{d}q}$ is too much to ask, and we are concerned with some weakenings of the concept.
 #
-# Show generically how joint density gives unnormalized posterior PWS.
+# * One common weakening is the *unnormalized* importance weight $Z \cdot \frac{\mathrm{d}p}{\mathrm{d}q}$, for some constant $Z>0$ that need not be explicitly known.
+#   * One can construct examples from posterior inference.  Here the target $p_y$ is the conditional distribution over latents in $X$ given an observation $y$ in $Y$.  We take for our proposal the prior $q$ over $X$, and we assume we can compute the probability density $k_x(y)$ of the observation $y$ when the latent value is $x$.  Then Bayes's rule can be rephrased as $\lambda x.\,k_x(y)$ computing a valid importance weight for the target $p_y$ with proposal $q$, where the normalizing constant $Z_y$ is the marginal density $\mathbf{E}_{x \sim q}[k_x(y)] = \int_X k_x(y)\,\mathrm{d}q$ of the observation $y$.
+#
+# * Another weakening is to replace $Z \cdot \frac{\mathrm{d}p}{\mathrm{d}q}$ with a stochastic function that produces unbiased estimates of the desired values.  In other words, we have a family $\xi_x$, for $x$ raning over $X$, of distributions over $[0,+\infty]$ such that $\mathbf{E}_{w \sim \xi_x}[w] = \int_{[0,+\infty]} w\,\mathrm{d}\xi_x = Z \cdot \frac{\mathrm{d}p}{\mathrm{d}q}(x)$ for all $x$.  Such $\xi$ is called an *unbiased density estimator (UDE)* for $p$ relative to $q$.
+#   * An example here arises when we have some joint distribution $p'$ on $X \times Y$, and our target $p$ is the first marginal of $p'$ (onto $X$).  Given a family of distributions $k_x$ on $Y$, parameterized by $x$ in $X$, then the process $\xi_x$ that first samples $y \sim k_x$ then returns $p'(x,y)/k_x(y)$ gives a UDE for $p$ with respect to the reference measure.  This construction is a form of so-called *pseudo-marginalization*.
+#
+# * What if, however, we cannot produce the weight estimates $w$ on their own given $x$, but rather, we can only produce $w$ along with $x$ as a byproduct of a process for producing the latter from $q$?  Thus we could ask for a distribution $\~q$ on $X \times [0,+\infty]$ whose samples are pairs $(x,w)$ such that, conditional on a value of $x$, the values $w$ form a UDE.  Equivalently, we could ask that $\mathbf{E}_{(x,w) \sim \~q}[f(x)\,w] = \int_{X \times [0,+\infty]} f(x)\,w\,\mathrm{d}\~q = Z \cdot \mathbf{E}_{x \sim p}[f(x)] = Z \cdot \int_X f(x)\,\mathrm{d}p$ for all functions $f$.  Such $\~q$ is called a *properly weighted sampler (PWS)* for $p$ with underlying proposal $q$, where removing the tilde indicates marginalizing out the weight to yield a distribution on $X$.
+#   * Again suppose we have some joint distribution $p'$ on $X \times Y$, and our target $p$ is the first marginal of $p'$ (onto $X$).  Given a PWS $\~q'$ for $p'$, which is a distribution on $X \times Y \times [0,+\infty]$, then marginalizing out $Y$ gives a distribution $\~q$ on $X \times [0,+\infty]$ that is a PWS for $p$.  This gives interesting examples of $\~q$ even when the weight of $\~q'$ is the deterministic RN derivative $\frac{\mathrm{d}p'}{\mathrm{d}q'}$.
+#
+# Properly weighted samplers are, for some purposes, almost as good as true samplers for the target.
+#
+# *Rejection sampling*, in its simplest form, works just as well in this generality: assume given a PWS $\~q$ with target $p$, having the (nontrivial) property that the weights $w$ arising from samples $(x,w) \sim \~q$ are uniformly bounded above by some constant $M>0$.  Then the process that successively draws samples $(x,w) \sim \~q$ plus $u \sim \textrm{Unif}([0,1])$ until $u \leq w/M$ is satisfied, then returns $x$, is a valid (but possibly very inefficient) sampler for $p$.
+#
+# The *sampling / importance resampling (SIR)* process also works just as well in this generality: given a PWS $\~q$ with target $p$, we let $\mathrm{SIR}^N(\~q)$ be the process that independently draws $N$ samples $(x_i,w_i) \sim \~q$, draws an index $I$ in $\{1,2,\ldots,N\}$ according to the categorical distribution with weights $w_i$, and returns $x_I$.  We can do even better if we use the auxiliary information of the discarded samples in the following way: return along with $x_I$ the average weight $\sum_i x_i/N$.  This sampler now corresponds to a distribution $\widetilde{\mathrm{SIR}}^N(\~q)$ on $X \times [0,+\infty]$ that is *again* properly weighted for $p$.  Note how this "average weight" value would be impossible to construct *ex post facto*, given $x_I$: the essence of PWSs is to simultaneously use auxiliary randomness to construct the sample with its weight estimate together.
+#
+# In the rejection sampling situation we can see how the stochasticity, embodied by the variance, in the weights of a PWS contribute to inefficiency: when the esitmate $w$ falls below $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$, it makes $x$ more likely to be rejected, increasing runtime.  The cases when $w$ lies above $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$ do not fully compensate in the runtime, for convexity reasons; moreover, they might force upon us a greater bound $M$, making all samples more likely to be rejected.  Generally, one gets a meaningful measure of the quality of approximation to the target $p$ by the PWS $\~q$ using the variance of the marginalization of $\~q$ onto the weight.  This global weight variance statistic naturally breaks up into the sum of the $\chi^2$-divergence of $p$ from $q$, plus the expected conditional variance of the weight, conditioned on the underlying proposal value.  Passing from $\~q$ to $\widetilde{\mathrm{SIR}}^N(\~q)$ reduces the global weight variance by a factor of $N$.
 #
 # Implement this in a little discrete example.
 
@@ -104,15 +119,15 @@
 #
 # Any model implicitly focuses on some information ($x$), while marginalizing out all remaining information as latent ($\theta$), that is, working with
 # $$
-# p(x) = \int_\Theta p(x|\theta)\,\mathrm{d}p(\theta).
+# p(x) = \int_\Theta p(x|\theta)\,p(\theta)\,\mathrm{d}\theta.
 # $$
 # Increasing our model complexity to account for more information amounts to working with a particular value of $\theta$ instead of averaging it out, thus working with
 # $$
 # p(x|\theta)\,p(\theta) = p(x,\theta),
 # $$
-# or, the joint distribution.  We express the ratio of these densities as the product of two factors,
+# the joint density.  We express the ratio of these densities as the product of two factors,
 # $$
-# \frac{p(x,\theta)}{p(x)} =  \frac{p(x|\theta)}{p(x)} \cdot p(\theta).
+# \frac{p(x|\theta)}{p(x)} \cdot p(\theta).
 # $$
 # First is the ratio $p(x|\theta)/p(x)$, which expresses how conditioning on $\theta$ affects our focus on the information $x$.  Second is $p(\theta)$, which expresses the associated cost: we are then required to allocate mass across the values of $\theta$, and homing in on the values of interest contracts the resulting probability.  This second factor, especially when applied many times while accounting for more and more information, is how the curse of dimensionality enters the picture.
 #
