@@ -59,9 +59,8 @@
 #
 # Let $p_1$ be the distribution over the unit interval $[0,1]$ with density function $p(x) = 6x(1-x)$.  Suppose that in our applications we are concerned with quantities $r = r(x^2)$ that only make use of $y := x^2$, so to simplify we introduce the pushforward distribution $q$ of $p$ under the square map, embodying such $y$ where $x \sim p$.  A little calculus shows that $q$ has the density $q(y) = 3(1-\sqrt y)$ on $[0,1]$.
 #
-# The distribution $p$ has mode at $x = \frac12$ in the center of the domain, whereas $q$ has mode at $y = 0$ on the end.  How can these behaviors be so different while representing the same situation?  When speaking of likely values of $r$, should we take $r(x^2)$ with $x$ near $\frac12$, or should we take $r(y)$ with $y$ near $0$, or should we do something else?
-#
-# Our parameter transformation $y = x^2$ has derivative $\frac{\mathrm{d}y}{\mathrm{d}x}$ with a zero at $x = 0$.  What is the relationship between this fact and the very different shapes of $p(x)$ and $q(y)$?
+# 1. The distribution $p$ has mode at $x = \frac12$ in the center of the domain, whereas $q$ has mode at $y = 0$ on the end.  How can these behaviors be so different while representing the same situation?  When speaking of likely values of $r$, should we take $r(x^2)$ with $x$ near $\frac12$, or should we take $r(y)$ with $y$ near $0$, or should we do something else?
+# 2. Our parameter transformation $y = x^2$ has derivative $\frac{\mathrm{d}y}{\mathrm{d}x}$ with a zero at $x = 0$.  What is the relationship between this fact and the very different shapes of $p(x)$ and $q(y)$?
 
 # %% [markdown]
 # [Enter your answer here]
