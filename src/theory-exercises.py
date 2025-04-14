@@ -68,23 +68,6 @@
 # %% [markdown]
 # ## Exercise 3
 #
-# Probabilistic reasoning is often structured so that we consider a distribution $p$ over *latent* variables $x$ (perhaps some posterior distribution given some information), as well as some quantity $r$ that depends on $x$ (perhaps stochastically).  Our knowledge of $p$ gives rise to values for $x$, which we *deductively* parlay into conclusions about $r$.
-#
-# The approach of *parameter optimization* would have us *find the best $x$* and then use it in reasoning about $r$.  The preceding two exercises demonstrate how doing so is ill-posed.
-# * According to Exercise 2, the modal $x$ is parameterization-dependent.  Natural nonlinear changes of variables give rise to inequivalent optimization problems.
-# * According to Exercise 1, the mass of the distribution is not even concentrated near the mode.
-# * According to both, optimization is not compositional.  The optimization conclusions are not stable under deductive reasoning.
-#
-# We contrast this with the approach of *sampling processes*, which would have us reason about $r$ by composing it, as a *process*, with the *process* for generating samples distributed according to $p$.
-# * I need a problem to solve here.
-# * Should show:
-#   * It gives answers.
-#   * It gives different answers than optimization.
-#   * It gives better answers.
-
-# %% [markdown]
-# ## Exercise 4
-#
 # Often tractability issues frustrate our computing with some *target* distribution $p$ on a space of values $X$.  The philosophy of *importance sampling (IS)* is that for some purposes we may instead design some *proposal* distribution $q$ on $X$ and track the discrepancy from $p$ via knowledge of its *Radon--Nikodym (RN) derivative* $\frac{\mathrm{d}p}{\mathrm{d}q}$.  This latter function $\frac{\mathrm{d}p}{\mathrm{d}q} : X \to [0,+\infty]$ is uniquely determined (up to measure zero) by the defining property that $\int_X f(x)\,\mathrm{d}p = \int_X f(x)\,\frac{\mathrm{d}p}{\mathrm{d}q}(x)\,\mathrm{d}q$ for all functions $f$, i.e., it acts as a density function for $p$ when we take $q$ as the reference measure.  In this context, we also refer to the value of the RN derivative as the *importance weight*.
 #
 # Often knowing $\frac{\mathrm{d}p}{\mathrm{d}q}$ is too much to ask, and we are concerned with some weakenings of the concept.
@@ -109,43 +92,3 @@
 # In the rejection sampling situation we can see how the stochasticity, embodied by the variance, in the weights of a PWS contribute to inefficiency: when the esitmate $w$ falls below $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$, it makes $x$ more likely to be rejected, increasing runtime.  The cases when $w$ lies above $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$ do not fully compensate in the runtime, for convexity reasons; moreover, they might force upon us a greater bound $M$, making all samples more likely to be rejected.  Generally, one gets a meaningful measure of the quality of approximation to the target $p$ by the PWS $\~q$ using the variance of the marginalization of $\~q$ onto the weight.  This global weight variance statistic naturally breaks up into the sum of the $\chi^2$-divergence of $p$ from $q$, plus the expected conditional variance of the weight, conditioned on the underlying proposal value.  Passing from $\~q$ to $\widetilde{\mathrm{SIR}}^N(\~q)$ reduces the global weight variance by a factor of $N$.
 #
 # Implement this in a little discrete example.
-
-# %% [markdown]
-# ## Exercise 5
-#
-# Hierarchical Bayes and model selection
-#
-# See [slides](https://www.doc.ic.ac.uk/~mpd37/teaching/2014/ml_tutorials/2014-01-29-slides_zoubin1.pdf) 23, 24 then 22, 25.
-#
-# [Occam's razor](https://v1.probmods.org/occam's-razor.html)
-#
-# Any model implicitly focuses on some information ($x$), while marginalizing out all remaining information as latent ($\theta$), that is, working with
-# $$
-# p(x) = \int_\Theta p(x|\theta)\,p(\theta)\,\mathrm{d}\theta.
-# $$
-# Increasing our model complexity to account for the more information of $\theta$ amounts to working with a particular value of the integrand instead of averaging it out, thus working with
-# $$
-# p(x|\theta)\,p(\theta) = p(x,\theta),
-# $$
-# i.e. the joint density.  We express the ratio of these densities as the product of two factors,
-# $$
-# \frac{p(x|\theta)}{p(x)} \cdot p(\theta).
-# $$
-# First is the ratio $p(x|\theta)/p(x)$, which expresses how conditioning on $\theta$ affects our focus on the information $x$.  Second is $p(\theta)$, which expresses the associated cost: we are then required to allocate mass across the values of $\theta$, and homing in near the values of interest diminishes the resulting probability mass.  This second factor, especially when applied many times while accounting for more and more information, is how the curse of dimensionality enters the picture.
-#
-# Model selection
-# * coin flipping?  curve fitting?
-# * Showing off "why rationality can protect against (the most basic form of) overfitting, assuming computationally-bounded hierarchical models"
-
-# %% [markdown]
-# ## Exercise 6
-#
-# Asymptotic Consistency
-#
-# Estimate any continuous density on the real line with a mixture of Gaussians, then can make good approximation of broad range of datasets.  See [slide 26 here](https://docs.google.com/presentation/d/1LdO6SPAFyC99Gb2QHa8-ikLLYluOPOB9MTavuOLTY9I/edit#slide=id.g10d6a8dad9_0_593) for picture.
-#
-# (Connect to slide 19 of prior slides.)
-#
-# GenJAXMix demo to illustrate it.
-#
-# > is partly why the bitter lesson is wrong: can have models that just memorize the data, and then the explanation is shallow
