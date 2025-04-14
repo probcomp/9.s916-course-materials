@@ -65,7 +65,7 @@
 # Work out the following case, in which $d=1$ so $|\det \mathrm{J}T(x)|$ is just $|T'(x)|$.  Let $p$ be the distribution over the unit interval $[0,1]$ with density function $p(x) = 6x(1-x)$.  Suppose that in our applications we are concerned with quantities $r = r(x^2)$ that only make use of $y := x^2$.  So to simplify matters, we introduce the pushforward distribution $q$ of $p$ under the square map, embodying such $y$ where $x \sim p$.  (Coincidentally, $q$ is again a distribution on $[0,1]$.)
 #
 # 1. State the mode $x_\text{max}$ of $p$.  Then compute the density function $q(y)$ and state its mode $y_\text{max}$.  Explain in terms of $T'(x)$ what is happening to these two modes.
-# 2. When reasoning about the downstream quantity $r$, it is tempting to take a "typical" value of a parameter on which $r$ depends, and use it to deduce a "typical" value of $r$.  But here we are faced with a conundrum: to decide whether $r(x_\text{max}^2)$ or $r(y_\text{max})$ is more truly "typical".  Explain how shifting emphasis from probability densities to the mass of the probability distribution resolves the tension.
+# 2. When reasoning about the downstream quantity $r$, it is tempting to take a "typical" value of a parameter on which $r$ depends, and use it to deduce a "typical" value of $r$.  But here we are faced with a conundrum: is $r(x_\text{max}^2)$ or is $r(y_\text{max})$ the truly "typical" value?  Explain how shifting emphasis from probability densities to the mass of the probability distribution resolves the tension.
 
 # %% [markdown]
 # [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
