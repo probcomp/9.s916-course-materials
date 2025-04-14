@@ -41,10 +41,9 @@
 # $$
 # q(r) = \binom dr \theta^r(1-\theta)^{d-r}.
 # $$
-# Fix $\theta = 0.9$ in the following.
 #
 # 3. Where is the density function $q(r)$ increasing (resp. decreasing)?  Hint: determine when $q(r+1)/q(r)$ is greater or less than $1$.  What is its mode $r_\text{max}$, to within an integer?  Note the asymptotic behavior of $r_\text{max}/d$ as $d \to +\infty$.
-# 4. Explain the asymptotic behavior of the probability $q(r = d)$ as $r$ is fixed and $d \to +\infty$.
+# 4. Assume $\theta > \frac12$, so that the modal value of $x$ is $x_\text{max} = (1,1,\ldots,1)$ with $r = d$.  Explain the asymptotic behavior of the probability $q(r = d)$ as $d \to +\infty$.
 #
 # In both of these cases, first drawing a sample $x$ from one distribution $p$, then using it to produce samples $r$ from a derived distribution $q$ under pushforward, must be done with care.  Explain the following phenomena in terms of the earlier discussion of high-dimensional geometry.
 #
@@ -52,7 +51,7 @@
 # 6. The likely values of $r$ come from values of $x$ with much lower density than the mode, and are not even near it.
 
 # %% [markdown]
-# [Enter your answer here]
+# [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
 
 # %% [markdown]
 # ## Exercise 2
@@ -92,3 +91,6 @@
 # In the rejection sampling situation we can see how the stochasticity, embodied by the variance, in the weights of a PWS contribute to inefficiency: when the esitmate $w$ falls below $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$, it makes $x$ more likely to be rejected, increasing runtime.  The cases when $w$ lies above $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$ do not fully compensate in the runtime, for convexity reasons; moreover, they might force upon us a greater bound $M$, making all samples more likely to be rejected.  Generally, one gets a meaningful measure of the quality of approximation to the target $p$ by the PWS $\~q$ using the variance of the marginalization of $\~q$ onto the weight.  This global weight variance statistic naturally breaks up into the sum of the $\chi^2$-divergence of $p$ from $q$, plus the expected conditional variance of the weight, conditioned on the underlying proposal value.  Passing from $\~q$ to $\widetilde{\mathrm{SIR}}^N(\~q)$ reduces the global weight variance by a factor of $N$.
 #
 # Implement this in a little discrete example.
+
+# %% [markdown]
+# [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
