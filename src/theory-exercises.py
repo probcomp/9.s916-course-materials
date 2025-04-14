@@ -68,7 +68,7 @@
 #
 # When reasoning about the downstream quantity $r$, it is tempting to take a "typical" value of a parameter on which $r$ depends, and use it to make deductions about "typical" values of $r$.  But here we are faced with a conundrum: is $r(x_\text{max}^2)$ or is $r(y_\text{max})$ the truly "typical" value?  The instability of "mode" under reparameterization exposes this approach as nonsense.
 #
-# 1. Instead of considering typical values $x$, as determined by their densities $p(x)$, we can talk about typical (sub)sets $A$, as determined by their probabilities $p(A)$.  Explain why this notion *is* invariant.  (This is a one- to two-sentence answer if stated clearly and directly.)
+# 2. Instead of considering typical values $x$, as determined by their densities $p(x)$, we can talk about typical (sub)sets $A$, as determined by their probabilities $p(A)$.  Explain why this notion *is* invariant.  (This is a one- to two-sentence answer if stated clearly and directly.)
 
 # %% [markdown]
 # [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
