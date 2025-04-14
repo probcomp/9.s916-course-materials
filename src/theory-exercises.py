@@ -68,14 +68,14 @@
 # %% [markdown]
 # ## Exercise 3
 #
-# Probabilistic reasoning is often structured so that we consider a distribution $p$ over *latent* variables $x$, perhaps some posterior distribution given some information, as well as some quantity $r$ that depends on $x$ (perhaps stochastically).  Our knowledge of $p$ gives rise to values for $x$, which we *deductively* parlay into conclusions about $r$.
+# Probabilistic reasoning is often structured so that we consider a distribution $p$ over *latent* variables $x$ (perhaps some posterior distribution given some information), as well as some quantity $r$ that depends on $x$ (perhaps stochastically).  Our knowledge of $p$ gives rise to values for $x$, which we *deductively* parlay into conclusions about $r$.
 #
 # The approach of *parameter optimization* would have us *find the best $x$* and then use it in reasoning about $r$.  The preceding two exercises demonstrate how doing so is ill-posed.
 # * According to Exercise 2, the modal $x$ is parameterization-dependent.  Natural nonlinear changes of variables give rise to inequivalent optimization problems.
 # * According to Exercise 1, the mass of the distribution is not even concentrated near the mode.
 # * According to both, optimization is not compositional.  The optimization conclusions are not stable under deductive reasoning.
 #
-# We with the approach of *sampling processes*, which would have us reason about $r$ by composing it, as a process, with the process for generating samples distributed according to $p$.
+# We contrast this with the approach of *sampling processes*, which would have us reason about $r$ by composing it, as a *process*, with the *process* for generating samples distributed according to $p$.
 # * I need a problem to solve here.
 # * Should show:
 #   * It gives answers.
@@ -93,9 +93,11 @@
 #   * One can construct examples from posterior inference.  Here the target $p_y$ is the conditional distribution over latents in $X$ given an observation $y$ in $Y$.  We take for our proposal the prior $q$ over $X$, and we assume we can compute the probability density $k_x(y)$ of the observation $y$ when the latent value is $x$.  Then Bayes's rule can be rephrased as $\lambda x.\,k_x(y)$ computing a valid unnormalized importance weight for the target $p_y$ with proposal $q$, where the normalizing constant $Z_y$ is the marginal density $\mathbf{E}_{x \sim q}[k_x(y)] = \int_X k_x(y)\,\mathrm{d}q$ of the observation $y$.
 #
 # * Another weakening is to replace $Z \cdot \frac{\mathrm{d}p}{\mathrm{d}q}$ with a stochastic function that produces unbiased estimates of the desired values.  In other words, we have a family $\xi_x$, for $x$ raning over $X$, of distributions over $[0,+\infty]$ such that $\mathbf{E}_{w \sim \xi_x}[w] = \int_{[0,+\infty]} w\,\mathrm{d}\xi_x = Z \cdot \frac{\mathrm{d}p}{\mathrm{d}q}(x)$ for all $x$.  Such $\xi$ is called an *unbiased density estimator (UDE)* for $p$ relative to $q$.
+#   * If we can importance sample directly, then we get a *deterministic* UDE by letting $\xi_x$ be the delta mass at $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$.
 #   * An example here arises when we have some joint distribution $p'$ on $X \times Y$, and our target $p$ is the first marginal of $p'$ (onto $X$).  Given a family of distributions $k_x$ on $Y$, parameterized by $x$ in $X$, then the process $\xi_x$ that first samples $y \sim k_x$ then returns $p'(x,y)/k_x(y)$ gives a UDE for $p$ with respect to the reference measure.  This construction is a form of so-called *pseudo-marginalization*.
 #
 # * What if, however, we cannot produce the weight estimates $w$ on their own given $x$, but rather, we can only produce $w$ along with $x$ as a byproduct of a process for producing the latter from $q$?  Thus we could ask for a distribution $\~q$ on $X \times [0,+\infty]$ whose samples are pairs $(x,w)$ such that, conditional on a value of $x$, the values $w$ form a UDE.  Equivalently, we could ask that $\mathbf{E}_{(x,w) \sim \~q}[f(x)\,w] = \int_{X \times [0,+\infty]} f(x)\,w\,\mathrm{d}\~q = Z \cdot \mathbf{E}_{x \sim p}[f(x)] = Z \cdot \int_X f(x)\,\mathrm{d}p$ for all functions $f$.  Such $\~q$ is called a *properly weighted sampler (PWS)* for $p$ with underlying proposal $q$, where removing the tilde indicates marginalizing out the weight to yield a distribution on $X$.
+#   * If we can draw samples from $q$ and we have a UDE $\xi$ for $p$ relative to $q$, then the process that draws $x \sim q$ then $w \sim \xi_x$ and returns $(x,w)$ is a PWS for $p$ with proposal $q$.
 #   * Again suppose we have some joint distribution $p'$ on $X \times Y$, and our target $p$ is the first marginal of $p'$ (onto $X$).  Given a PWS $\~q'$ for $p'$, which is a distribution on $X \times Y \times [0,+\infty]$, then marginalizing out $Y$ gives a distribution $\~q$ on $X \times [0,+\infty]$ that is a PWS for $p$.  This gives interesting examples of $\~q$ even when the weight of $\~q'$ is the deterministic RN derivative $\frac{\mathrm{d}p'}{\mathrm{d}q'}$.
 #
 # Properly weighted samplers are, for some purposes, almost as good as true samplers for the target.
@@ -121,15 +123,15 @@
 # $$
 # p(x) = \int_\Theta p(x|\theta)\,p(\theta)\,\mathrm{d}\theta.
 # $$
-# Increasing our model complexity to account for more information amounts to working with a particular value of $\theta$ instead of averaging it out, thus working with
+# Increasing our model complexity to account for the more information of $\theta$ amounts to working with a particular value of the integrand instead of averaging it out, thus working with
 # $$
 # p(x|\theta)\,p(\theta) = p(x,\theta),
 # $$
-# the joint density.  We express the ratio of these densities as the product of two factors,
+# i.e. the joint density.  We express the ratio of these densities as the product of two factors,
 # $$
 # \frac{p(x|\theta)}{p(x)} \cdot p(\theta).
 # $$
-# First is the ratio $p(x|\theta)/p(x)$, which expresses how conditioning on $\theta$ affects our focus on the information $x$.  Second is $p(\theta)$, which expresses the associated cost: we are then required to allocate mass across the values of $\theta$, and homing in on the values of interest contracts the resulting probability.  This second factor, especially when applied many times while accounting for more and more information, is how the curse of dimensionality enters the picture.
+# First is the ratio $p(x|\theta)/p(x)$, which expresses how conditioning on $\theta$ affects our focus on the information $x$.  Second is $p(\theta)$, which expresses the associated cost: we are then required to allocate mass across the values of $\theta$, and homing in near the values of interest diminishes the resulting probability mass.  This second factor, especially when applied many times while accounting for more and more information, is how the curse of dimensionality enters the picture.
 #
 # Model selection
 # * coin flipping?  curve fitting?
