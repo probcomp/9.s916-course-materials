@@ -26,16 +26,16 @@
 # ## Exercise 1
 #
 # Life in high-dimensional spaces has some surprising features compared to our low-dimensional intuitions.  Consider the following calculations:
-# * Within the $d$-dimensional unit ball, the sub-ball of radius $0.99$ captures a $(0.99)^d$-fraction of the volume, a fraction which decreases *exponentially* in $d$.  Thus not much volume is to be found near anyone point; rather, volume accumulates more due to the sheer multiplicity of directions in which it can be packed out around the point.
-# * Consider probability distributions $p$ on the $d$-dimensional unit cubes $[0,1]^d$, and we subdivide each axis of the latter into $N$ equal sub-intervals to get $N^d$ sub-cubes.  We can informally distinguish between two cases.  On the one hand, $p$ could be *spread out*, in that $p$ does not assign disproportionately much mass to any one sub-cube.  In this case, $p$ cannot assign much more than $1/N^d$ mass to each cube---an amount that is exponentially small in $d$.  On the other hand, $p$ could exhibit *concentration*, where some sub-cubes are assigned rather more than $1/N^d$ mass.  In this case, the proportion of the sub-cubes that can recieve non-negligible mass must be an exponentially small in $d$, leading to a needle-in-haystack situation: "typical sets" are hard to locate, describe, or generate samples over.
+# * Within the $d$-dimensional unit ball, the sub-ball of radius $0.99$ captures a $(0.99)^d$-fraction of the volume, a fraction which decreases *exponentially* in $d$.  Thus not much volume is to be found near any one point; rather, volume accumulates more due to the sheer multiplicity of directions in which it can be packed out around the point.
+# * Consider probability distributions $p$ on the $d$-dimensional unit cube $[0,1]^d$, and we subdivide each axis of the latter into $N$ equal sub-intervals to get $N^d$ sub-cubes.  We can informally distinguish between two cases.  On the one hand, $p$ could be *spread out*, in that $p$ does not assign disproportionately much mass to any one sub-cube.  In this case, $p$ cannot assign much more than $1/N^d$ mass to each cube—an amount that is exponentially small in $d$.  On the other hand, $p$ could exhibit *concentration*, where some sub-cubes are assigned rather more than $1/N^d$ mass.  In this case, the proportion of the sub-cubes that can recieve non-negligible mass must be an exponentially small in $d$, leading to a needle-in-haystack situation: "typical sets" are hard to locate, describe, or generate samples over.
 #
 # Related phenomena arise for multivariate normal distributions $p$ in $d$ variables, as $d$ grows.  For simplicity we take $p = \mathrm{Norm}(0_d,\mathrm{I}_d)$ to be origin-centered and have identity covariance, so that $p = \mathrm{Norm}(0,1)^d$ is equivalent to the indepenent product of $d$ univariate normals of mean zero and unit covariance.  This distribution has density $p(x) = (2\pi)^{-d/2}\exp(-r^2/2)$ where $r = |x|$.  The *$\chi$ distribution* $q$ is, by definition, the pushforward of $p$ under the norm map; it embodies the distribution of norms $r = |x|$ for vectors $x \sim p$.  A little multivariable calculus shows that $q$ has density
 # $$
 # q(r) = \frac2{2^{d/2}\Gamma(d/2)}r^{d-1}\exp(-r^2/2).
 # $$
 #
-# 1. Where is the density function $q(r)$ increasing (resp. decreasing)?  What is the mode, i.e. the norm $r = r_0$ that maximizes the density?  Note the asymptotic behavior of this mode as $d \to +\infty$.
-# 2. Using a monotonicity property of $q(r)$ from part (1), show how to give a simple upper bound on the probability $q(0 \leq r \leq r_1)$ when $r_1$ satisfies $0 \leq r_1 \leq r_0$.  Then, taking $r_1 = 1$, explain the asymptotic behavior of the probability $q(0 \leq r \leq r_1)$ as $d \to +\infty$.
+# 1. Where is the density function $q(r)$ increasing (resp. decreasing)?  What is the mode, i.e. the norm $r = r_\text{max}$ that maximizes the density?  Note the asymptotic behavior of this mode as $d \to +\infty$.
+# 2. Using a monotonicity property of $q(r)$ from part (1), show how to give a simple upper bound on the probability $q(0 \leq r \leq r_1)$ when $r_1$ satisfies $0 \leq r_1 \leq r_\text{max}$.  Then, taking $r_1 = 1$ for simplicity, explain the asymptotic behavior of the probability $q(0 \leq r \leq 1)$ as $d \to +\infty$.
 #
 # Here is a discrete variant.  For $0 < \theta < 1$, let $\mathrm{Bern}(\theta)$ be the Bernoulli distribution on $\{0,1\}$ of weight $\theta$.  We consider $p = \mathrm{Bern}(p)^d$, with density $p(x) = \theta^{\sum_i x_i}(1-\theta)^{d-\sum_i x_i}$.  The *binomial distribution* $\mathrm{Binom}(\theta, d)$ is, by definition, the pushforward of $p$ under the sum map; it embodies the distribution over numbers $r = \sum_i x_i$ of heads for sequences $x \sim p$.  A count of the possibilities shows that $q$ has the density
 # $$
@@ -43,8 +43,8 @@
 # $$
 # Fix $\theta = 0.9$ in the following.
 #
-# 3. Where is the density function $q(r)$ increasing (resp. decreasing)?  Hint: determine when $q(r+1)/q(r)$ is greater or less than $1$.  What is its mode $r_1$, to within an integer?  Note the asymptotic behavior of $r_1/d$ as $d \to +\infty$.
-# 4. Explain the asymptotic behavior of the probability $q(r = d)$ as $d \to +\infty$.
+# 3. Where is the density function $q(r)$ increasing (resp. decreasing)?  Hint: determine when $q(r+1)/q(r)$ is greater or less than $1$.  What is its mode $r_\text{max}$, to within an integer?  Note the asymptotic behavior of $r_\text{max}/d$ as $d \to +\infty$.
+# 4. Explain the asymptotic behavior of the probability $q(r = d)$ as $r$ is fixed and $d \to +\infty$.
 #
 # In both of these cases, first drawing a sample $x$ from one distribution $p$, then using it to produce samples $r$ from a derived distribution $q$ under pushforward, must be done with care.  Explain the following phenomena in terms of the earlier discussion of high-dimensional geometry.
 #
