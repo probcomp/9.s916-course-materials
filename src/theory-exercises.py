@@ -111,8 +111,8 @@
 # 3. Create the "proposal" $q = \text{Norm}(0,10)$, create a UDE for $p$ relative to $q$, and use it to extend $q$ to a PWS $\~q$ for $p$.  (Your answer to the last part should accept as its only parameter a PRNG Key.)
 # 4. Experimentally inspect the marginal distribution on the weights of $\~q$: plot its histogram in comparison to $p$, estimate its mean and variance, and so on.
 # 5. Implement $\widetilde{\text{SIR}}^N(\~q)$ and do the same for it as in (4), for varying $N$.
-# 6. Now use the additional information that $1 \leq \sigma^2 \leq 5$ to produce a constant $M > 0$ that bounds the weights of $\~q$, and run rejection sampling.  Plot its histogram in comparison to $p$.
-# 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,1)$?  Would there be any corresponding difficulty in (4)?
+# 6. Now use the additional information that $0 < 1 \leq \sigma^2 \leq 5 < 10$ to produce a constant $M > 0$ that bounds the weights of $\~q$, and run rejection sampling.  Plot its histogram in comparison to $p$.
+# 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,\tau^2)$ where $\tau^2 < 5$?  Would there be any corresponding difficulty in (4)?
 
 # %% [markdown]
 # [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
