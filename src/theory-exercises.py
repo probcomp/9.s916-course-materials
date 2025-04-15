@@ -107,11 +107,11 @@
 # Consider the "target" model $p$ consisting of $\text{Norm}(\mu,\sigma)$, where $\mu \sim \text{Unif}([-5,+5])$ and $\sigma \sim \text{Unif}([1,5])$ are marginalized out.  Thus $p$ is a continuous average (better: integral) of these normal distributions, and its density is not obviously in closed form.
 #
 # 1. Implement a sampler for $p$ in GenJAX.  Your answer should accept as its only parameter a PRNG Key.
-# 2. Use the GenJAX `importance` method to code a UDE for $p$, relative to the reference (Lebesgue) measure on $\mathbf{R}$.  Your answer should accept as its two parameters a PRNG Key and a value whose density to estimate.
+# 2. Use the GenJAX `importance` method to concisely code a pseudo-marginal UDE for $p$, relative to the reference (Lebesgue) measure on $\mathbf{R}$.  Your answer should accept as its two parameters a PRNG Key and a value whose density to estimate.
 # 3. Create the "proposal" $q = \text{Norm}(0,10)$, create a UDE for $p$ relative to $q$, and use it to extend $q$ to a PWS $\~q$ for $p$.  Your answer to the last part should accept as its only parameter a PRNG Key.
 # 4. Experimentally inspect the marginal distribution on the weights of $\~q$: plot its histogram in comparison to $p$, estimate its mean and variance, and so on.
 # 5. Implement $\widetilde{\text{SIR}}^N(\~q)$ and do the same for it as in (4), for varying $N$.
-# 6. Now use the additional information that $0 < 1 \leq \sigma \leq 5 < 10$ to produce a constant $M > 0$ that bounds the weights of $\~q$ (or perhaps its logarithm), and use it to run rejection sampling.  Plot its histogram in comparison to $p$.
+# 6. Now use our additional knowledge of the target model, and especially the information that $0 < 1 \leq \sigma \leq 5 < 10$, to produce a constant $M > 0$ that bounds the weights of $\~q$ (or perhaps its logarithm), and use it to run rejection sampling.  Plot its histogram in comparison to $p$.
 # 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,\tau)$ where $\tau < 5$?  Would there be any corresponding difficulty in (4)?
 
 # %% [markdown]
