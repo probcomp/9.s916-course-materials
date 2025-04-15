@@ -113,3 +113,6 @@
 # 5. Implement $\widetilde{\text{SIR}}^N(\~q)$ and do the same for it as in (4), for varying $N$.
 # 6. Now use the additional information that $1 \leq \sigma^2 \leq 5$ to produce a constant $M > 0$ that bounds the weights of $\~q$, and run rejection sampling.  Plot its histogram in comparison to $p$.
 # 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,1)$?  Would there be any corresponding difficulty in (4)?
+
+# %% [markdown]
+# [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
