@@ -20,7 +20,21 @@
 # ## Setup
 
 # %%
-# setup
+# Global includes
+
+# import sys
+# if "google.colab" in sys.modules:
+#     from google.colab import auth  # pyright: ignore [reportMissingImports]
+#     auth.authenticate_user()
+#     %pip install --quiet keyring keyrings.google-artifactregistry-auth  # type: ignore # noqa
+#     %pip install --quiet genjax==0.7.0 genstudio==2024.9.7 --extra-index-url https://us-west1-python.pkg.dev/probcomp-caliban/probcomp/simple/  # type: ignore # noqa
+
+import jax
+import jax.numpy as jnp
+import genjax
+from genjax import ChoiceMapBuilder as C
+from penzai import pz
+import genstudio.plot as Plot
 
 # %% [markdown]
 # ## Exercise 1
