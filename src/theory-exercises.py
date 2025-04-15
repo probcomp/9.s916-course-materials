@@ -74,7 +74,7 @@
 # [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
 
 # %% [markdown]
-# ## Exercise 3
+# ## Interpolation
 #
 # Often tractability issues frustrate our computing with some *target* distribution $p$ on a space of values $X$.  The philosophy of *importance sampling (IS)* is that for some purposes we may instead design some *proposal* distribution $q$ on $X$ and track the discrepancy from $p$ via knowledge of its *Radon--Nikodym (RN) derivative* $\frac{\mathrm{d}p}{\mathrm{d}q}$.  This latter function $\frac{\mathrm{d}p}{\mathrm{d}q} : X \to [0,+\infty]$ is uniquely determined (up to measure zero) by the defining property that $\int_X f(x)\,\mathrm{d}p = \int_X f(x)\,\frac{\mathrm{d}p}{\mathrm{d}q}(x)\,\mathrm{d}q$ for all functions $f$, i.e., it acts as a density function for $p$ when we take $q$ as the reference measure.  In this context, we also refer to the value of the RN derivative as the *importance weight*.
 #
@@ -91,7 +91,7 @@
 #   * If we can draw samples from $q$ and we have a UDE $\xi$ for $p$ relative to $q$, then the process that draws $x \sim q$ followed by $w \sim \xi_x$ and then returns $(x,w)$ is a PWS for $p$ with proposal $q$.
 #   * Again suppose we have some joint distribution $p'$ on $X \times Y$, and our target $p$ is the first marginal of $p'$ (onto $X$).  Given a PWS $\~q'$ for $p'$, which is a distribution on $X \times Y \times [0,+\infty]$, then marginalizing out $Y$ gives a distribution $\~q$ on $X \times [0,+\infty]$ that is (fact!) a PWS for $p$.  This gives interesting examples of $\~q$ even when the weight of $\~q'$ is the deterministic RN derivative $\frac{\mathrm{d}p'}{\mathrm{d}q'}$.
 #
-# Properly weighted samplers $\~q$ are, for some purposes, almost as good as true samplers for the target $p$.
+# Properly weighted samplers $\~q$ are, for some purposes, almost as good as true samplers for their targets $p$.
 #
 # * *Rejection sampling*, in its simplest form, works just as well in this generality: assume the (nontrivial) property that the weights $w$ arising from samples $(x,w) \sim \~q$ are bounded above by some *known* constant $M>0$.  Then the process that successively draws samples $(x,w) \sim \~q$ plus $u \sim \textrm{Unif}([0,1])$ until $u \leq w/M$ is satisfied, then returns $x$, is (fact!) a valid (but possibly very inefficient) sampler for $p$.
 #
@@ -99,7 +99,17 @@
 #
 # In the rejection sampling situation we can see how stochasticity, embodied by the variance, in the weights of a PWS contributes to inefficiency: when the esitmate $w$ falls below $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$, it makes $x$ more likely to be rejected, increasing runtime.  The cases when $w$ lies above $\frac{\mathrm{d}p}{\mathrm{d}q}(x)$ do not fully compensate in the runtime, for convexity reasons; moreover, they might force upon us a greater bound $M$, making all samples more likely to be rejected.
 #
-# Implement this in a little discrete example.
+# Generally, one gets a meaningful measure of the quality of approximation to the target $p$ by the PWS $\~q$ using the variance of the marginalization of $\~q$ onto the weight.  This global weight variance statistic naturally breaks up into the sum of the $\chi^2$-divergence of $p$ from $q$, plus the expected conditional variance of the weight, conditioned on the underlying proposal value.  Passing from $\~q$ to $\widetilde{\mathrm{SIR}}^N(\~q)$ reduces the global weight variance by a factor of $N$, which, by the way, demonstrates the convergence of the SIR process in a strong sense of $\chi^2$-divergence.
 
 # %% [markdown]
-# [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
+# ## Exercise 3
+#
+# Consider the "target" model $p$ consisting of $\text{Norm}(\mu,\sigma^2)$, where $\mu \sim \text{Unif}([-5,+5])$ and $\sigma^2 \sim \text{Unif}([1,5])$ are marginalized out.
+#
+# 1. Implement $p$ in GenJAX.
+# 2. How does the GenJAX `importance` method to let you code a UDE for $p$, relative to the reference (Lebesgue) measure on $\mathbf{R}$?  (Your answer should accept as parameters a PRNG Key and a value whose density to estimate.)
+# 3. Create the "proposal" $q = \text{Norm}(0,10)$, create a UDE for $p$ relative to $q$, and use it to extend $q$ to a PWS $\~q$ for $p$.  (Your answer to the last part should accept as its only parameter a PRNG Key.)
+# 4. Experimentally inspect the marginal distribution on the weights of $\~q$: plot its histogram in comparison to $p$, estimate its mean and variance, and so on.
+# 5. Implement $\widetilde{\text{SIR}}^N(\~q)$ and do the same for it as in (4), for varying $N$.
+# 6. Now use the additional information that $1 \leq \sigma^2 \leq 5$ to produce a constant $M > 0$ that bounds the weights of $\~q$, and run rejection sampling.  Plot its histogram in comparison to $p$.
+# 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,1)$?
