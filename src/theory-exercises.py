@@ -104,7 +104,7 @@
 # %% [markdown]
 # ## Exercise 3
 #
-# Consider the "target" model $p$ consisting of $\text{Norm}(\mu,\sigma^2)$, where $\mu \sim \text{Unif}([-5,+5])$ and $\sigma^2 \sim \text{Unif}([1,5])$ are marginalized out.
+# Consider the "target" model $p$ consisting of $\text{Norm}(\mu,\sigma^2)$, where $\mu \sim \text{Unif}([-5,+5])$ and $\sigma^2 \sim \text{Unif}([1,5])$ are marginalized out.  Thus $p$ is a kind of average of these normal distributions, and its density is not immediately in closed form.
 #
 # 1. Implement $p$ in GenJAX.
 # 2. How does the GenJAX `importance` method to let you code a UDE for $p$, relative to the reference (Lebesgue) measure on $\mathbf{R}$?  (Your answer should accept as parameters a PRNG Key and a value whose density to estimate.)
@@ -112,4 +112,4 @@
 # 4. Experimentally inspect the marginal distribution on the weights of $\~q$: plot its histogram in comparison to $p$, estimate its mean and variance, and so on.
 # 5. Implement $\widetilde{\text{SIR}}^N(\~q)$ and do the same for it as in (4), for varying $N$.
 # 6. Now use the additional information that $1 \leq \sigma^2 \leq 5$ to produce a constant $M > 0$ that bounds the weights of $\~q$, and run rejection sampling.  Plot its histogram in comparison to $p$.
-# 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,1)$?
+# 7. Bonus: what would go wrong in (6) if instead $q = \text{Norm}(0,1)$?  Would there be any corresponding difficulty in (4)?
