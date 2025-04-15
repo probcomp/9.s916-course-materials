@@ -74,7 +74,7 @@
 # [Enter your answers here.  Feel free to use Markdown+LaTeX and/or code cells.]
 
 # %% [markdown]
-# ## Interpolation
+# ## Some exposition
 #
 # Often tractability issues frustrate our computing with some *target* distribution $p$ on a space of values $X$.  The philosophy of *importance sampling (IS)* is that for some purposes we may instead design some *proposal* distribution $q$ on $X$ and track the discrepancy from $p$ via knowledge of its *Radon--Nikodym (RN) derivative* $\frac{\mathrm{d}p}{\mathrm{d}q}$.  This latter function $\frac{\mathrm{d}p}{\mathrm{d}q} : X \to [0,+\infty]$ is uniquely determined (up to measure zero) by the defining property that $\int_X f(x)\,\mathrm{d}p = \int_X f(x)\,\frac{\mathrm{d}p}{\mathrm{d}q}(x)\,\mathrm{d}q$ for all functions $f$, i.e., it acts as a density function for $p$ when we take $q$ as the reference measure.  In this context, we also refer to the value of the RN derivative as the *importance weight*.
 #
