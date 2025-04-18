@@ -29,12 +29,14 @@
 #     %pip install --quiet keyring keyrings.google-artifactregistry-auth  # type: ignore # noqa
 #     %pip install --quiet genjax==0.7.0 genstudio==2024.9.7 --extra-index-url https://us-west1-python.pkg.dev/probcomp-caliban/probcomp/simple/  # type: ignore # noqa
 
-import jax
-import jax.numpy as jnp
-import genjax
-from genjax import ChoiceMapBuilder as C
-from penzai import pz
-import genstudio.plot as Plot
+# fmt: off
+import jax                                # noqa: F401
+import jax.numpy as jnp                   # noqa: F401
+import genjax                             # noqa: F401
+from genjax import ChoiceMapBuilder as C  # noqa: F401
+from penzai import pz                     # noqa: F401
+import genstudio.plot as Plot             # noqa: F401
+# fmt: on
 
 # %% [markdown]
 # ## Exercise 1

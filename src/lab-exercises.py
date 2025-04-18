@@ -53,6 +53,7 @@ html = Plot.Hiccup
 
 # Map data
 
+
 def create_segments(points):
     """
     Given an array of points of shape (N, 2), return an array of
@@ -80,9 +81,7 @@ def make_world(wall_verts, clutters_vec):
     clutters = jax.vmap(create_segments)(clutters_vec)
 
     # Combine all points for bounding box calculation
-    all_points = jnp.vstack(
-        (jnp.array(wall_verts), jnp.concatenate(clutters_vec))
-    )
+    all_points = jnp.vstack((jnp.array(wall_verts), jnp.concatenate(clutters_vec)))
     x_min, y_min = jnp.min(all_points, axis=0)
     x_max, y_max = jnp.max(all_points, axis=0)
 
@@ -92,13 +91,14 @@ def make_world(wall_verts, clutters_vec):
     center_point = jnp.array([(x_min + x_max) / 2, (y_min + y_max) / 2])
 
     return {
-            "walls": walls,
-            "wall_verts": wall_verts,
-            "clutters": clutters,
-            "bounding_box": bounding_box,
-            "box_size": box_size,
-            "center_point": center_point,
-        }
+        "walls": walls,
+        "wall_verts": wall_verts,
+        "clutters": clutters,
+        "bounding_box": bounding_box,
+        "box_size": box_size,
+        "center_point": center_point,
+    }
+
 
 def load_file(file_name):
     # load from cwd or its parent
@@ -109,6 +109,7 @@ def load_file(file_name):
     except FileNotFoundError:
         with open(f"../{file_name}") as f:
             return json.load(f)
+
 
 def load_world(file_name):
     """
@@ -128,6 +129,7 @@ def load_world(file_name):
 
     return make_world(walls_vec, clutters_vec)
 
+
 world = load_world("world.json")
 
 walls_plot = Plot.new(
@@ -140,11 +142,7 @@ walls_plot = Plot.new(
     Plot.domain(world["bounding_box"][0]),
 )
 
-world_plot = (
-    walls_plot
-    + Plot.frame(strokeWidth=4, stroke="#ddd")
-    + Plot.color_legend()
-)
+world_plot = walls_plot + Plot.frame(strokeWidth=4, stroke="#ddd") + Plot.color_legend()
 
 clutters_plot = (
     [Plot.line(c[:, 0], fill=Plot.constantly("clutters")) for c in world["clutters"]],
@@ -153,6 +151,7 @@ clutters_plot = (
 
 
 # Poses
+
 
 @pz.pytree_dataclass
 class Pose(genjax.PythonicPytree):
@@ -199,14 +198,21 @@ class Pose(genjax.PythonicPytree):
         """
         return Pose(self.p, self.hd + a)
 
+
 def random_pose(k):
-    p_array = jax.random.uniform(k, shape=(3,),
+    p_array = jax.random.uniform(
+        k,
+        shape=(3,),
         minval=world["bounding_box"][:, 0],
-        maxval=world["bounding_box"][:, 1])
+        maxval=world["bounding_box"][:, 1],
+    )
     return Pose(p_array[0:2], p_array[2])
 
+
 def pose_wings(pose, opts={}):
-    return Plot.line(js("""
+    return Plot.line(
+        js(
+            """
                    const pose = %1;
                    let positions = pose.p;
                    let angles = pose.hd;
@@ -231,12 +237,20 @@ def pose_wings(pose, opts={}):
                      ]
                      return [wing1, center, wing2]
                    }})
-                   """, pose, expression=False),
-                z="2",
-                **opts)
+                   """,
+            pose,
+            expression=False,
+        ),
+        z="2",
+        **opts,
+    )
+
 
 def pose_body(pose, opts={}):
-    return Plot.dot(js("typeof %1.hd === 'number' ? [%1.p] : %1.p", pose), {"r": 4} | opts)
+    return Plot.dot(
+        js("typeof %1.hd === 'number' ? [%1.p] : %1.p", pose), {"r": 4} | opts
+    )
+
 
 def pose_plots(poses, wing_opts={}, body_opts={}, **opts):
     """
@@ -255,15 +269,16 @@ def pose_plots(poses, wing_opts={}, body_opts={}, **opts):
     if "color" in opts:
         wing_opts = wing_opts | {"stroke": opts["color"]}
         body_opts = body_opts | {"fill": opts["color"]}
-    return (
-        pose_wings(poses, opts | wing_opts) + pose_body(poses, opts | body_opts)
-    )
+    return pose_wings(poses, opts | wing_opts) + pose_body(poses, opts | body_opts)
+
 
 def pose_widget(label, initial_pose, **opts):
-    return (
-        pose_plots(js(f"$state.{label}"),
-            render=Plot.renderChildEvents({"onDrag": js(
-                f"""
+    return pose_plots(
+        js(f"$state.{label}"),
+        render=Plot.renderChildEvents(
+            {
+                "onDrag": js(
+                    f"""
                 (e) => {{
                     if (e.shiftKey) {{
                         const dx = e.x - $state.{label}.p[0];
@@ -274,12 +289,16 @@ def pose_widget(label, initial_pose, **opts):
                         $state.update({{{label}: {{hd: $state.{label}.hd, p: [e.x, e.y]}}}})
                     }}
                 }}
-                """)}), **opts)
-        | Plot.initialState({label: initial_pose.as_dict()}, sync=label)
-    )
+                """
+                )
+            }
+        ),
+        **opts,
+    ) | Plot.initialState({label: initial_pose.as_dict()}, sync=label)
 
 
 # Ideal sensors
+
 
 def distance(p, seg, PARALLEL_TOL=1.0e-6):
     """
@@ -300,16 +319,13 @@ def distance(p, seg, PARALLEL_TOL=1.0e-6):
     st = jnp.where(
         jnp.abs(det) < PARALLEL_TOL,
         jnp.array([jnp.nan, jnp.nan]),
-        jnp.array([
-            segdp[0] * pq[1] - segdp[1] * pq[0],
-              pdp[0] * pq[1] -   pdp[1] * pq[0]
-        ]) / det
+        jnp.array(
+            [segdp[0] * pq[1] - segdp[1] * pq[0], pdp[0] * pq[1] - pdp[1] * pq[0]]
+        )
+        / det,
     )
-    return jnp.where(
-        (st[0] >= 0) & (st[1] >= 0) & (st[1] <= 1),
-        st[0],
-        jnp.inf
-    )
+    return jnp.where((st[0] >= 0) & (st[1] >= 0) & (st[1] <= 1), st[0], jnp.inf)
+
 
 sensor_settings = {
     "fov": 2 * jnp.pi * (2 / 3),
@@ -317,69 +333,95 @@ sensor_settings = {
     "box_size": world["box_size"],
 }
 
+
 def sensor_distance(pose, walls, box_size):
     d = jnp.min(jax.vmap(distance, in_axes=(None, 0))(pose, walls))
     # Capping to a finite value avoids issues below.
     return jnp.where(jnp.isinf(d), 2 * box_size, d)
 
+
 def make_sensor_angles(sensor_settings):
     na = sensor_settings["num_angles"]
     return sensor_settings["fov"] * (jnp.arange(na) - ((na - 1) / 2)) / (na - 1)
 
+
 sensor_angles = make_sensor_angles(sensor_settings)
+
 
 def ideal_sensor(pose):
     return jax.vmap(
-        lambda angle: sensor_distance(pose.rotate(angle), world["walls"], sensor_settings["box_size"])
+        lambda angle: sensor_distance(
+            pose.rotate(angle), world["walls"], sensor_settings["box_size"]
+        )
     )(sensor_angles)
 
+
 def plot_sensors(pose, readings, sensor_angles, show_legend=False):
-    return Plot.Import("""export const projections = (pose, readings, angles) => Array.from({length: readings.length}, (_, i) => {
+    return Plot.Import(
+        """export const projections = (pose, readings, angles) => Array.from({length: readings.length}, (_, i) => {
                 const angle = angles[i] + pose.hd
                 const reading = readings[i]
                 return [pose.p[0] + reading * Math.cos(angle), pose.p[1] + reading * Math.sin(angle)]
             })""",
-            refer=["projections"]) | (
+        refer=["projections"],
+    ) | (
         Plot.line(
-            js("projections(%1, %2, %3).flatMap((projection, i) => [%1.p, projection, i])", pose, readings, sensor_angles),
+            js(
+                "projections(%1, %2, %3).flatMap((projection, i) => [%1.p, projection, i])",
+                pose,
+                readings,
+                sensor_angles,
+            ),
             opacity=0.1,
-        ) +
-        Plot.dot(
+        )
+        + Plot.dot(
             js("projections(%1, %2, %3)", pose, readings, sensor_angles),
             r=2.75,
-            fill="#f80"
-        ) +
-        Plot.cond(show_legend, Plot.colorMap({"sensor rays": "rgb(0,0,0,0.1)", "sensor readings": "#f80"}) | Plot.colorLegend())
+            fill="#f80",
+        )
+        + Plot.cond(
+            show_legend,
+            Plot.colorMap({"sensor rays": "rgb(0,0,0,0.1)", "sensor readings": "#f80"})
+            | Plot.colorLegend(),
+        )
     )
+
 
 def pose_at(state, label):
     pose_dict = getattr(state, label)
     return Pose(jnp.array(pose_dict["p"]), jnp.array(pose_dict["hd"]))
 
+
 def update_ideal_sensors(widget, label):
-    widget.state.update({
-        (label + "_readings"): ideal_sensor(pose_at(widget.state, label))
-    })
+    widget.state.update(
+        {(label + "_readings"): ideal_sensor(pose_at(widget.state, label))}
+    )
 
 
 # Noisy sensors
 
 model_sensor_noise = 0.1
 
+
 @genjax.gen
 def sensor_model_one(pose, angle, sensor_noise):
     return (
         genjax.normal(
-            sensor_distance(pose.rotate(angle), world["walls"], sensor_settings["box_size"]),
+            sensor_distance(
+                pose.rotate(angle), world["walls"], sensor_settings["box_size"]
+            ),
             sensor_noise,
         )
         @ "distance"
     )
 
+
 sensor_model = sensor_model_one.vmap(in_axes=(None, 0, None))
+
 
 def noisy_sensor(key, pose, sensor_noise):
     return sensor_model.propose(key, (pose, sensor_angles, sensor_noise))[2]
+
 
 def noise_slider(key, label, init):
     return Plot.Slider(
@@ -390,13 +432,15 @@ def noise_slider(key, label, init):
         step=0.01,
     ) | Plot.initialState({key: init}, sync={key})
 
+
 def update_noisy_sensors(widget, pose_key, slider_key):
     k1, k2 = jax.random.split(jax.random.wrap_key_data(widget.state.k))
-    readings = noisy_sensor(k1, pose_at(widget.state, pose_key), float(getattr(widget.state, slider_key)))
-    widget.state.update({
-        "k": jax.random.key_data(k2),
-        (pose_key + "_readings"): readings
-    })
+    readings = noisy_sensor(
+        k1, pose_at(widget.state, pose_key), float(getattr(widget.state, slider_key))
+    )
+    widget.state.update(
+        {"k": jax.random.key_data(k2), (pose_key + "_readings"): readings}
+    )
     return readings
 
 
@@ -405,57 +449,57 @@ def update_noisy_sensors(widget, pose_key, slider_key):
 # Uniform prior over the whole map.
 # (This is just a recapitulation of `random_pose` from above.)
 
+
 @genjax.gen
 def uniform_pose(mins, maxes):
     p_array = genjax.uniform(mins, maxes) @ "p_array"
     return Pose(p_array[0:2], p_array[2])
 
+
 whole_map_prior = uniform_pose.partial_apply(
-    world["bounding_box"][:, 0],
-    world["bounding_box"][:, 1]
+    world["bounding_box"][:, 0], world["bounding_box"][:, 1]
 )
+
 
 def whole_map_cm_builder(pose):
     return C["p_array"].set(pose.as_array())
+
 
 # Even mixture of uniform priors over two rooms.
 
 room_mixture = jnp.ones(2) / 2
 room1 = jnp.array([[12.83, 15.81], [11.19, 15.26], [-jnp.pi, +jnp.pi]])
-room2 = jnp.array([[15.73, 18.90], [ 5.79,  9.57], [-jnp.pi, +jnp.pi]])
+room2 = jnp.array([[15.73, 18.90], [5.79, 9.57], [-jnp.pi, +jnp.pi]])
 
 two_room_prior = genjax.mix(
     uniform_pose.partial_apply(room1[:, 0], room1[:, 1]),
-    uniform_pose.partial_apply(room2[:, 0], room2[:, 1])
+    uniform_pose.partial_apply(room2[:, 0], room2[:, 1]),
 ).partial_apply(jnp.log(room_mixture), (), ())
 
+
 def two_room_cm_builder(pose):
-    return (
-        C["mixture_component"].set(jnp.array(pose.p[1] < 10, int))
-        | C["component_sample", "p_array"].set(pose.as_array())
-    )
+    return C["mixture_component"].set(jnp.array(pose.p[1] < 10, int)) | C[
+        "component_sample", "p_array"
+    ].set(pose.as_array())
+
 
 # Prior localized around a single pose
 
 pose_for_localized_prior = Pose(jnp.array([2.0, 16.0]), jnp.array(0.0))
 spread_of_localized_prior = (0.1, 0.75)
+
+
 @genjax.gen
 def localized_prior():
     p = (
         genjax.mv_normal_diag(
-            pose_for_localized_prior.p,
-            spread_of_localized_prior[0] * jnp.ones(2)
+            pose_for_localized_prior.p, spread_of_localized_prior[0] * jnp.ones(2)
         )
         @ "p"
     )
-    hd = (
-        genjax.normal(
-            pose_for_localized_prior.hd,
-            spread_of_localized_prior[1]
-        )
-        @ "hd"
-    )
+    hd = genjax.normal(pose_for_localized_prior.hd, spread_of_localized_prior[1]) @ "hd"
     return Pose(p, hd)
+
 
 def localized_cm_builder(pose):
     return C["p"].set(pose.p) | C["hd"].set(pose.hd)
@@ -469,78 +513,98 @@ model_dispatch = {
     "localized": (localized_prior, localized_cm_builder),
 }
 
+
 def make_posterior_density_fn(prior_label, readings, model_noise):
     prior, cm_builder = model_dispatch[prior_label]
+
     @genjax.gen
     def joint_model():
         pose = prior() @ "pose"
         sensor = sensor_model(pose, sensor_angles, model_noise) @ "sensor"  # noqa: F841
+
     return jax.jit(
-        lambda pose:
-            joint_model.assess(
-                C["pose"].set(cm_builder(pose)) | C["sensor", "distance"].set(readings),
-                ()
-            )[0]
+        lambda pose: joint_model.assess(
+            C["pose"].set(cm_builder(pose)) | C["sensor", "distance"].set(readings), ()
+        )[0]
     )
 
 
 # "Camera widget" code
 
+
 def on_camera_button(button_handler):
     def handler(widget, _):
         k1, k2 = jax.random.split(jax.random.wrap_key_data(widget.state.k))
-        widget.state.update({
-            "k": jax.random.key_data(k1),
-            "target": widget.state.camera,
-        })
+        widget.state.update(
+            {
+                "k": jax.random.key_data(k1),
+                "target": widget.state.camera,
+            }
+        )
         readings = update_noisy_sensors(widget, "target", "world_noise")
         button_handler(widget, k2, readings)
-        widget.state.update({
-            "target_exists": True,
-        })
+        widget.state.update(
+            {
+                "target_exists": True,
+            }
+        )
+
     return handler
 
+
 def camera_widget(
-        k, camera_pose,
-        button_label, button_handler,
-        result_plots=Plot.dot([jnp.sum(world["bounding_box"], axis=1)[0:2]], opacity=1),
-        bottom_elements=(),
-        initial_state={},
-        sync=set()):
+    k,
+    camera_pose,
+    button_label,
+    button_handler,
+    result_plots=Plot.dot([jnp.sum(world["bounding_box"], axis=1)[0:2]], opacity=1),
+    bottom_elements=(),
+    initial_state={},
+    sync=set(),
+):
     return (
         (
             world_plot
-            + Plot.cond(js("$state.target_exists"),
+            + Plot.cond(
+                js("$state.target_exists"),
                 result_plots
-                + plot_sensors(js("$state.target"), js("$state.target_readings"), sensor_angles)
-                + pose_plots(js("$state.target"), color="red")
+                + plot_sensors(
+                    js("$state.target"), js("$state.target_readings"), sensor_angles
+                )
+                + pose_plots(js("$state.target"), color="red"),
             )
             + pose_widget("camera", camera_pose, color="blue")
         )
         | noise_slider("world_noise", "World/data noise = ", model_sensor_noise)
-        | Plot.html([
-            "p",
-            "Prior:",
+        | Plot.html(
             [
-                "select",
-                {"onChange": js("(e) => $state.prior = e.target.value")},
-                ["option", {"value": "whole_map", "selected": "True"}, "whole map"],
-                ["option", {"value": "two_room"}, "two room"],
-                ["option", {"value": "localized"}, "localized"],
+                "p",
+                "Prior:",
+                [
+                    "select",
+                    {"onChange": js("(e) => $state.prior = e.target.value")},
+                    ["option", {"value": "whole_map", "selected": "True"}, "whole map"],
+                    ["option", {"value": "two_room"}, "two room"],
+                    ["option", {"value": "localized"}, "localized"],
+                ],
             ]
-        ])
+        )
         | noise_slider("model_noise", "Model/inference noise = ", model_sensor_noise)
         | (
-            Plot.html([
-                "button",
-                {
-                    "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
-                    "onClick": on_camera_button(button_handler)
-                },
-                button_label
-            ])
+            Plot.html(
+                [
+                    "button",
+                    {
+                        "class": "w-24 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700",
+                        "onClick": on_camera_button(button_handler),
+                    },
+                    button_label,
+                ]
+            )
             & Plot.html(
-                Plot.js("""`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`""")
+                Plot.js(
+                    """`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`"""
+                )
             )
             & Plot.html(
                 Plot.js("""$state.target_exists ?
@@ -554,20 +618,30 @@ def camera_widget(
                 "target_exists": False,
                 "target": {"p": None, "hd": None},
                 "target_readings": [],
-                "prior": "whole_map"
-            } | initial_state,
-            sync=({"k", "target", "camera_readings", "prior"} | sync))
+                "prior": "whole_map",
+            }
+            | initial_state,
+            sync=({"k", "target", "camera_readings", "prior"} | sync),
+        )
     )
 
 
 # Grid utils
 
+
 def make_grid(bounds, ns):
-    return [dim.reshape(-1) for dim in jnp.meshgrid(*(jnp.linspace(*bound, num=n) for (bound, n) in zip(bounds, ns)))]
+    return [
+        dim.reshape(-1)
+        for dim in jnp.meshgrid(
+            *(jnp.linspace(*bound, num=n) for (bound, n) in zip(bounds, ns))
+        )
+    ]
+
 
 def make_poses_grid_array(bounds, ns):
     grid_xs, grid_ys, grid_hds = make_grid(bounds, ns)
     return jnp.array([grid_xs, grid_ys]).T, grid_hds
+
 
 def make_poses_grid(bounds, ns):
     return Pose(*make_poses_grid_array(bounds, ns))
@@ -575,10 +649,12 @@ def make_poses_grid(bounds, ns):
 
 # Robot programs
 
+
 @pz.pytree_dataclass
 class Control(genjax.PythonicPytree):
     ds: FloatArray
     dhd: FloatArray
+
 
 def load_robot_program(file_name):
     """
@@ -612,13 +688,17 @@ def load_robot_program(file_name):
 
     return ({"start": start, "controls": controls}, T)
 
+
 world["bounce"] = 0.1
 robot_inputs, T = load_robot_program("robot_program.json")
 
 
 # Integrating controls / applying robot programs
 
-def diag(x): return (x, x)
+
+def diag(x):
+    return (x, x)
+
 
 def integrate_controls_unphysical(robot_inputs):
     """
@@ -638,6 +718,7 @@ def integrate_controls_unphysical(robot_inputs):
         robot_inputs["start"],
         robot_inputs["controls"],
     )[1]
+
 
 @jax.jit
 def physical_step(p1: FloatArray, p2: FloatArray, hd):
@@ -668,7 +749,9 @@ def physical_step(p1: FloatArray, p2: FloatArray, hd):
     collision_point = p1 + closest_wall_distance * step_pose.dp()
     wall_direction = closest_wall[1] - closest_wall[0]
     normalized_wall_direction = wall_direction / jnp.linalg.norm(wall_direction)
-    wall_normal = jnp.array([-normalized_wall_direction[1], normalized_wall_direction[0]])
+    wall_normal = jnp.array(
+        [-normalized_wall_direction[1], normalized_wall_direction[0]]
+    )
 
     # Ensure wall_normal points away from the robot's direction
     wall_normal = jnp.where(
@@ -685,6 +768,7 @@ def physical_step(p1: FloatArray, p2: FloatArray, hd):
 
     return Pose(final_position, hd)
 
+
 def integrate_controls_physical(robot_inputs):
     """
     Integrates controls to generate a path, taking into account physical interactions with walls.
@@ -696,17 +780,21 @@ def integrate_controls_physical(robot_inputs):
     - Pose: A Pose object representing the path taken by applying the controls.
     """
     return jax.lax.scan(
-        lambda pose, control: diag(physical_step(
+        lambda pose, control: diag(
+            physical_step(
                 pose.p, pose.p + control.ds * pose.dp(), pose.hd + control.dhd
-            )),
+            )
+        ),
         robot_inputs["start"],
         robot_inputs["controls"],
     )[1]
+
 
 path_integrated = integrate_controls_physical(robot_inputs)
 
 
 # Step and path models
+
 
 @genjax.gen
 def step_model(motion_settings, start, control):
@@ -719,21 +807,20 @@ def step_model(motion_settings, start, control):
     hd = genjax.normal(start.hd + control.dhd, motion_settings["hd_noise"]) @ "hd"
     return physical_step(start.p, p, hd)
 
+
 degrees = jnp.pi / 180
-model_motion_settings = {
-    "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
+model_motion_settings = {"p_noise": 0.15, "hd_noise": 1 * degrees}
+
 
 @genjax.gen
 def path_model(motion_settings):
     return (
-        step_model
-        .partial_apply(motion_settings)
+        step_model.partial_apply(motion_settings)
         .map(diag)
         .scan()(robot_inputs["start"], robot_inputs["controls"])
         @ "steps"
     )
+
 
 def confidence_circle(p, p_noise):
     return Plot.ellipse(
@@ -742,28 +829,35 @@ def confidence_circle(p, p_noise):
         fill=Plot.constantly("95% confidence region"),
     ) + Plot.color_map({"95% confidence region": "rgba(255,0,0,0.25)"})
 
+
 def plot_path_with_confidence(path, step):
     prev_step = robot_inputs["start"] if step == 0 else path[step - 1]
     return (
         world_plot
         + confidence_circle(
             [prev_step.apply_control(robot_inputs["controls"][step]).p],
-            model_motion_settings["p_noise"]
+            model_motion_settings["p_noise"],
         )
         + [pose_plots(path[i]) for i in range(step)]
         + pose_plots(path[step], color=Plot.constantly("next pose"))
         + Plot.color_map({"previous poses": "black", "next pose": "green"})
     )
 
+
 def animate_path_and_sensors(path, readings, frame_key=None):
-    return Plot.Frames([
-        plot_path_with_confidence(path, step)
-        + plot_sensors(pose, readings[step], sensor_angles)
-        for step, pose in enumerate(path)
-    ], fps=2, key=frame_key)
+    return Plot.Frames(
+        [
+            plot_path_with_confidence(path, step)
+            + plot_sensors(pose, readings[step], sensor_angles)
+            for step, pose in enumerate(path)
+        ],
+        fps=2,
+        key=frame_key,
+    )
 
 
 # Full model
+
 
 @genjax.gen
 def full_model_kernel(motion_settings, sensor_noise, state, control):
@@ -771,11 +865,11 @@ def full_model_kernel(motion_settings, sensor_noise, state, control):
     sensor_model(pose, sensor_angles, sensor_noise) @ "sensor"
     return pose
 
+
 @genjax.gen
 def full_model(motion_settings, sensor_noise):
     return (
-        full_model_kernel
-        .partial_apply(motion_settings, sensor_noise)
+        full_model_kernel.partial_apply(motion_settings, sensor_noise)
         .map(diag)
         .scan()(robot_inputs["start"], robot_inputs["controls"])
         @ "steps"
@@ -795,21 +889,27 @@ motion_settings_high_deviation = {
 
 key = jax.random.key(0)
 key, k_low, k_high = jax.random.split(key, 3)
-trace_low_deviation = full_model.simulate(k_low, (motion_settings_low_deviation, model_sensor_noise))
-trace_high_deviation = full_model.simulate(k_high, (motion_settings_high_deviation, model_sensor_noise))
+trace_low_deviation = full_model.simulate(
+    k_low, (motion_settings_low_deviation, model_sensor_noise)
+)
+trace_high_deviation = full_model.simulate(
+    k_high, (motion_settings_high_deviation, model_sensor_noise)
+)
+
 
 def get_path(trace):
     return trace.get_retval()[1]
 
+
 def get_sensors(trace):
     return trace.get_choices()["steps", "sensor", "distance"]
+
 
 def animate_full_trace(trace, frame_key=None):
     path = get_path(trace)
     readings = get_sensors(trace)
-    return animate_path_and_sensors(
-        path, readings, frame_key=frame_key
-    )
+    return animate_path_and_sensors(path, readings, frame_key=frame_key)
+
 
 def constraint_from_path(path):
     c_ps = jax.vmap(lambda ix, p: C["steps", ix, "pose", "p"].set(p))(
@@ -825,16 +925,26 @@ path_low_deviation = get_path(trace_low_deviation)
 path_high_deviation = get_path(trace_high_deviation)
 observations_low_deviation = get_sensors(trace_low_deviation)
 observations_high_deviation = get_sensors(trace_high_deviation)
-constraints_low_deviation = C["steps", "sensor", "distance"].set(observations_low_deviation)
-constraints_high_deviation = C["steps", "sensor", "distance"].set(observations_high_deviation)
+constraints_low_deviation = C["steps", "sensor", "distance"].set(
+    observations_low_deviation
+)
+constraints_high_deviation = C["steps", "sensor", "distance"].set(
+    observations_high_deviation
+)
 
 constraints_path_integrated = constraint_from_path(path_integrated)
 
 
 # Whole-path importance resampling
 
+
 def importance_resample_unjitted(
-    key: PRNGKey, constraints: genjax.ChoiceMap, motion_settings, sensor_noise, N: int, K: int
+    key: PRNGKey,
+    constraints: genjax.ChoiceMap,
+    motion_settings,
+    sensor_noise,
+    N: int,
+    K: int,
 ):
     """Produce K importance samples of depth N from the model. That is, K times, we
     generate N importance samples conditioned by the constraints, and categorically
@@ -852,51 +962,58 @@ def importance_resample_unjitted(
     selected = jax.tree.map(lambda x: x[winners], samples)
     return selected
 
+
 importance_resample = jax.jit(importance_resample_unjitted, static_argnums=(4, 5))
 
 
 def pytree_transpose(list_of_pytrees):
-  """
-  Converts a list of pytrees of identical structure into a single pytree of lists.
-  """
-  return jax.tree.map(lambda *xs: jnp.array(list(xs)), *list_of_pytrees)
+    """
+    Converts a list of pytrees of identical structure into a single pytree of lists.
+    """
+    return jax.tree.map(lambda *xs: jnp.array(list(xs)), *list_of_pytrees)
 
-def plot_inference_result(title, samples_label, posterior_paths, target_path, history_paths=None):
-    return (
-        html(*title)
-        | (
-            world_plot
-            + (
-                [
-                    Plot.line(
-                        {"x": path.p[:, 0], "y": path.p[:, 1]},
-                        curve="linear",
-                        opacity=0.05,
-                        strokeWidth=2,
-                        stroke="red"
-                    )
-                    for path in history_paths
-                ] if history_paths else []
-            )
-            + [
+
+def plot_inference_result(
+    title, samples_label, posterior_paths, target_path, history_paths=None
+):
+    return html(*title) | (
+        world_plot
+        + (
+            [
                 Plot.line(
                     {"x": path.p[:, 0], "y": path.p[:, 1]},
                     curve="linear",
-                    opacity=0.2,
+                    opacity=0.05,
                     strokeWidth=2,
-                    stroke="green"
+                    stroke="red",
                 )
-                for path in posterior_paths
+                for path in history_paths
             ]
-            + pose_plots(
-                target_path, fill=Plot.constantly("path to be inferred"), opacity = 0.5, strokeWidth=2
+            if history_paths
+            else []
+        )
+        + [
+            Plot.line(
+                {"x": path.p[:, 0], "y": path.p[:, 1]},
+                curve="linear",
+                opacity=0.2,
+                strokeWidth=2,
+                stroke="green",
             )
-            + Plot.color_map({
+            for path in posterior_paths
+        ]
+        + pose_plots(
+            target_path,
+            fill=Plot.constantly("path to be inferred"),
+            opacity=0.5,
+            strokeWidth=2,
+        )
+        + Plot.color_map(
+            {
                 samples_label: "green",
                 "path to be inferred": "black",
-            } | (
-               {"culled paths": "red"} if history_paths else {}
-            ))
+            }
+            | ({"culled paths": "red"} if history_paths else {})
         )
     )
 
@@ -905,6 +1022,7 @@ def plot_inference_result(title, samples_label, posterior_paths, target_path, hi
 
 StateT = TypeVar("StateT")
 ControlT = TypeVar("ControlT")
+
 
 class SISwithRejuvenation(Generic[StateT, ControlT]):
     """
@@ -953,8 +1071,10 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
             [PRNGKey, StateT, ControlT, Array], tuple[genjax.Trace[StateT], float]
         ],
         rejuvenate: Callable[
-            [PRNGKey, genjax.Trace[StateT], Array, StateT, ControlT], tuple[genjax.Trace[StateT], float]
-        ] | None = None,
+            [PRNGKey, genjax.Trace[StateT], Array, StateT, ControlT],
+            tuple[genjax.Trace[StateT], float],
+        ]
+        | None = None,
     ):
         self.importance = jax.jit(importance)
         self.rejuvenate = jax.jit(rejuvenate) if rejuvenate else None
@@ -969,7 +1089,11 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
         """
 
         def __init__(
-            self, end: StateT, samples: genjax.Trace[StateT], indices: IntArray, rejuvenated: genjax.Trace[StateT]
+            self,
+            end: StateT,
+            samples: genjax.Trace[StateT],
+            indices: IntArray,
+            rejuvenated: genjax.Trace[StateT],
         ):
             self.end = end
             self.samples = samples.get_retval()
@@ -983,10 +1107,12 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
             active_paths = self.N * [[]]
             for i in range(self.T):
                 new_active_paths = self.N * [None]
-                for (j, count) in enumerate(jnp.bincount(self.indices[i], length=self.N)):
+                for j, count in enumerate(jnp.bincount(self.indices[i], length=self.N)):
                     if count == 0:
                         complete_paths.append(active_paths[j] + [self.samples[i][j]])
-                    new_active_paths[j] = active_paths[self.indices[i][j]] + [self.rejuvenated[i][j]]
+                    new_active_paths[j] = active_paths[self.indices[i][j]] + [
+                        self.rejuvenated[i][j]
+                    ]
                 active_paths = new_active_paths
             return complete_paths + active_paths
 
@@ -1002,24 +1128,26 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
             particles, log_weights = state
             key, control, observation = update
             ks = jax.random.split(key, (3, N))
-            samples, log_weight_increments = jax.vmap(self.importance, in_axes=(0, 0, None, None))(
-                ks[0], particles, control, observation
-            )
+            samples, log_weight_increments = jax.vmap(
+                self.importance, in_axes=(0, 0, None, None)
+            )(ks[0], particles, control, observation)
             indices = jax.vmap(genjax.categorical.propose, in_axes=(0, None))(
                 ks[1], (log_weights + log_weight_increments,)
             )[2]
-            (resamples, antecedents) = jax.tree.map(lambda v: v[indices], (samples, particles))
+            (resamples, antecedents) = jax.tree.map(
+                lambda v: v[indices], (samples, particles)
+            )
             if self.rejuvenate:
-                rejuvenated, new_log_weights = jax.vmap(self.rejuvenate, in_axes=(0, 0, 0, None, None))(
-                    ks[2],
-                    resamples,
-                    antecedents,
-                    control,
-                    observation
-                )
+                rejuvenated, new_log_weights = jax.vmap(
+                    self.rejuvenate, in_axes=(0, 0, 0, None, None)
+                )(ks[2], resamples, antecedents, control, observation)
             else:
                 rejuvenated, new_log_weights = resamples, jnp.zeros(log_weights.shape)
-            return (rejuvenated.get_retval(), new_log_weights), (samples, indices, rejuvenated)
+            return (rejuvenated.get_retval(), new_log_weights), (
+                samples,
+                indices,
+                rejuvenated,
+            )
 
         init_array = jax.tree.map(
             lambda a: jnp.broadcast_to(a, (N,) + a.shape), self.init
@@ -1034,6 +1162,7 @@ class SISwithRejuvenation(Generic[StateT, ControlT]):
             ),
         )
         return SISwithRejuvenation.Result(end, samples, indices, rejuvenated)
+
 
 def localization_sis(motion_settings, sensor_noise, observations):
     return SISwithRejuvenation(
@@ -1050,13 +1179,19 @@ def localization_sis(motion_settings, sensor_noise, observations):
 
 # SMCP3
 
+
 def run_SMCP3_step(fwd_proposal, bwd_proposal, key, sample, proposal_args):
     k1, k2 = jax.random.split(key, 2)
-    _, fwd_proposal_weight, (fwd_update, bwd_choices) = fwd_proposal.propose(k1, (sample, proposal_args))
+    _, fwd_proposal_weight, (fwd_update, bwd_choices) = fwd_proposal.propose(
+        k1, (sample, proposal_args)
+    )
     new_sample, model_weight_diff, _, _ = sample.update(k2, fwd_update)
-    bwd_proposal_weight, _ = bwd_proposal.assess(bwd_choices, (new_sample, proposal_args))
+    bwd_proposal_weight, _ = bwd_proposal.assess(
+        bwd_choices, (new_sample, proposal_args)
+    )
     new_log_weight = model_weight_diff + bwd_proposal_weight - fwd_proposal_weight
     return new_sample, new_log_weight
+
 
 # Forward proposal searches a nearby grid around the sample,
 # and returns an importance-resampled member.
@@ -1068,13 +1203,12 @@ def grid_fwd_proposal(sample, args):
     observation_cm = C["sensor", "distance"].set(observation)
 
     log_weights = jax.vmap(
-        lambda p, hd:
-            full_model_kernel.assess(
-                observation_cm
-                | C["pose", "p"].set(p + sample.get_retval().p)
-                | C["pose", "hd"].set(hd + sample.get_retval().hd),
-                full_model_args
-            )[0]
+        lambda p, hd: full_model_kernel.assess(
+            observation_cm
+            | C["pose", "p"].set(p + sample.get_retval().p)
+            | C["pose", "hd"].set(hd + sample.get_retval().hd),
+            full_model_args,
+        )[0]
     )(*base_grid)
     fwd_index = genjax.categorical(log_weights) @ "fwd_index"
 
@@ -1083,8 +1217,9 @@ def grid_fwd_proposal(sample, args):
             C["pose", "p"].set(base_grid[0][fwd_index] + sample.get_retval().p)
             | C["pose", "hd"].set(base_grid[1][fwd_index] + sample.get_retval().hd)
         ),
-        C["bwd_index"].set(len(log_weights) - 1 - fwd_index)
+        C["bwd_index"].set(len(log_weights) - 1 - fwd_index),
     )
+
 
 # Backwards proposal simply guesses according to the prior over steps, nothing fancier.
 @genjax.gen
@@ -1093,23 +1228,22 @@ def grid_bwd_proposal(new_sample, args):
     step_model_args = (full_model_args[0], full_model_args[2], full_model_args[3])
 
     log_weights = jax.vmap(
-        lambda p, hd:
-            step_model.assess(
-                C["p"].set(p + new_sample.get_retval().p)
-                | C["hd"].set(hd + new_sample.get_retval().hd),
-                step_model_args
-            )[0]
+        lambda p, hd: step_model.assess(
+            C["p"].set(p + new_sample.get_retval().p)
+            | C["hd"].set(hd + new_sample.get_retval().hd),
+            step_model_args,
+        )[0]
     )(*base_grid)
 
     _ = genjax.categorical(log_weights) @ "bwd_index"
     # Since the backward proposal is only used for assessing the above choice,
     # no further computation is necessary.
 
-def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_grid, observations):
-    base_grid = make_poses_grid_array(
-        jnp.array([-M_grid / 2, M_grid / 2]).T,
-        N_grid
-    )
+
+def localization_sis_plus_grid_rejuv(
+    motion_settings, sensor_noise, M_grid, N_grid, observations
+):
+    base_grid = make_poses_grid_array(jnp.array([-M_grid / 2, M_grid / 2]).T, N_grid)
     return SISwithRejuvenation(
         robot_inputs["start"],
         robot_inputs["controls"],
@@ -1124,7 +1258,7 @@ def localization_sis_plus_grid_rejuv(motion_settings, sensor_noise, M_grid, N_gr
             grid_bwd_proposal,
             key,
             sample,
-            (base_grid, observation, (motion_settings, sensor_noise, pose, control))
+            (base_grid, observation, (motion_settings, sensor_noise, pose, control)),
         ),
     )
 
@@ -1869,8 +2003,8 @@ world_sensor_noise = 0.3
 
 model_motion_settings = {
     "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
+    "hd_noise": 1 * degrees,
+}  # fmt: skip
 model_sensor_noise = 0.1
 
 # SIR
@@ -1891,7 +2025,12 @@ some_observations = get_sensors(some_trace)
 some_constraints = C["steps", "sensor", "distance"].set(some_observations)
 
 SIR_posterior = importance_resample(
-    k2, some_constraints, model_motion_settings, model_sensor_noise, N_presamples, N_samples
+    k2,
+    some_constraints,
+    model_motion_settings,
+    model_sensor_noise,
+    N_presamples,
+    N_samples,
 )
 
 smcp3_result = localization_sis_plus_grid_rejuv(
@@ -1905,13 +2044,16 @@ smcp3_result = localization_sis_plus_grid_rejuv(
             ("global importance resampling",),
             "samples",
             jax.vmap(get_path)(SIR_posterior),
-            some_path
-        ) & plot_inference_result(
+            some_path,
+        )
+        & plot_inference_result(
             ("SIS with SMCP3 grid rejuvenation",),
             "samples",
             [pytree_transpose(path) for path in smcp3_result.backtrack()],
             some_path,
-            history_paths=[pytree_transpose(path) for path in smcp3_result.flood_fill()]
+            history_paths=[
+                pytree_transpose(path) for path in smcp3_result.flood_fill()
+            ],
         )
     )
 )
@@ -1930,8 +2072,8 @@ world_sensor_noise = 0.75
 
 model_motion_settings = {
     "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
+    "hd_noise": 1 * degrees,
+}  # fmt: skip
 model_sensor_noise = 0.1
 
 # SIR
@@ -1957,8 +2099,8 @@ world_sensor_noise = 0.05
 
 model_motion_settings = {
     "p_noise": 0.15,
-    "hd_noise": 1 * degrees
-}
+    "hd_noise": 1 * degrees,
+}  # fmt: skip
 model_sensor_noise = 0.1
 
 # SIR
