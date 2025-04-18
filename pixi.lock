@@ -3595,7 +3595,7 @@ packages:
 - pypi: .
   name: localization-tutorial
   version: 0.1.0
-  sha256: f348bf7474f4d297d3e14bafadadd414ec87afa3fe2dce8180d03ec5b4108417
+  sha256: 3932cec5c489aa4f4c74fd43c87d1afaf171046d3070d8ce4900024d7e5c14d1
   requires_dist:
   - genstudio>=2025.2.3,<2026
   - genjax==0.10.0
