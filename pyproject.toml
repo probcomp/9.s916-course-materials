@@ -53,7 +53,3 @@ jax = { version = ">=0.4.35", extras = ["cuda12-local"] }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
-
-
-[tool.ruff]
-exclude = ["src/*"]
