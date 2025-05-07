@@ -1953,7 +1953,7 @@ def localization_sis_plus_grid_rejuv(
 # The parameters have the following meanings.
 # 1. The world motion deviation corresponds to *how wide our hypotheses will need to range* in order to infer the path.
 # 2. The world sensor noise corresponds to *how reliable the data are* for doing this inference.
-# 3. The model motion deviation corresponds to *how wide our prior* over paths is.
+# 3. The model motion deviation corresponds to *how wide our search* over paths is.
 # 4. The model sensor noise corresponds to *how tolerant versus avoidant* we are of incongruous data.
 #
 # By varying the state in the first cell, investigate the following issues.  **To report your findings, copy-paste suitable reproducible state into the cells below, and add sufficient text/comments for the reader to follow.**
@@ -1961,8 +1961,8 @@ def localization_sis_plus_grid_rejuv(
 #    * There is not much reliable information to work with, so inference does little to bias samples from the prior towards the posterior.  However, the prior is already somewhat close to the posterior, so global SIR appears to do well enough.  Although SMCP3 nails the answer, it does so at much greater computational expense.
 # 2. High world motion deviation and low world sensor noise:
 #    * The reliable information clearly tells us our inference to do *something*.  However, the prior being far from the posterior, SIR has trouble producing good hypotheses, while SMCP3 is able to search for them.
-# 3. In the prior two scenarios, when might tighter/looser deviation/noise help/hurt inference?
-# 4. What inference computational cost (`N_this`, `N_that`) seems to be enough?
+
+# In each case, additionally address:  When does tighter/looser deviation/noise *in the model* help/hurt inference?  What inference computational cost (`N_this`, `N_that`) seems to be enough?
 
 # %%
 # Set reproducible state here!
@@ -2056,6 +2056,8 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 # 2. Modify `joint_model` within `make_posterior_density_fn` to be *hierarchical*: the `model_noise` parameter (still passed to the original `sensor_model`) is changed from an explicit model parameter to a hyperparamter, drawn inside the model from the hyperprior `genjax.gamma(concentration=2.0, rate=20.0)`.
 # 3. At the same time as (2.), move the `model_noise` argument of `make_posterior_density_fn` to a parameter of the `lambda` expression passed to `jax.jit`, and incorporate its value in the choice map passed into `assess`.
 #
+# (The new world sensor model of (1) should *only* be used for generating world data, and *not* employed in the new joint model function of (2,3) for running inference!)
+#
 # Modify some of the inference algorithms to range not over poses, but instead over pairs of pose and noise parameter.  (In the case of MH, remember to modify `do_MH_step` to wiggle the noise parameter too.)
 #
 # Play with the inference and **explain**, given a noise parameter for the data generation, what happens to the `sensor_noise` hyperparameter to get a good fit.
@@ -2072,9 +2074,9 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 #
 # In order to compare two distributions $p, q$ on a space $X$, we can instead compare their pushforwards under some test function $f : X \to \mathbf{R}$; that is, we can compare the distribution of values $f(x)$ where $x \sim p$ to the distribution of values $f(y)$ where $y \sim q$, reducing us to comparing two $\mathbf{R}$-valued distributions.
 #
-# One intuitive comparison of $\mathbf{R}$-valued distributions is simply to via their *histograms*.
+# One intuitive comparison of $\mathbf{R}$-valued distributions is simply via their *histograms*.
 #
-# A more sophisticated comparison that actually plays them off one another would be a *rank-based test*.  The essence is to draw independent samples $x_1, \ldots, x_N \sim p$ and $y \sim q$, sort the $x_i$, and compute the the index $I$ with $x_I \leq y \leq x_{I+1}$ (formally taking $x_0 = -\infty$); if $p=q$ then we expect such indices $I$ to be uniformly distributed in $\{0,1,\ldots,N\}$.  We generate $M$ such indices $I_1,\ldots,I_M$ (keeping $N$ fixed, thus requiring $MN$ samples from $p$ and $M$ samples from $q$), and assess whether they seem uniform---using some statistical test for uniformity, or maybe by inspection of a *single* histogram.
+# A more sophisticated comparison that actually plays them off one another would be a *rank-based test*.  The essence is to draw independent samples $x_1, \ldots, x_N \sim p$ and $y \sim q$, sort the $x_i$, and compute the the index $I$ with $x_I \leq y \leq x_{I+1}$ (formally taking $x_0 = -\infty$ and $x_{N+1} = +\infty$); if $p=q$ then we expect such indices $I$ to be uniformly distributed in $\{0,1,\ldots,N\}$.  We generate $M$ such indices $I_1,\ldots,I_M$ (keeping $N$ fixed, thus requiring $MN$ samples from $p$ and $M$ samples from $q$), and assess whether they seem uniform---using some statistical test for uniformity, or maybe by inspection of a *single* histogram.
 #
 # (Breaking ties in the ordering to determine $I$ is likely unnecessary in the continuous case, but carries a subtlety in the discrete case: to get it right, choose $U_1, U_2, \ldots, U_N, U$ continuous-uniformly on $[0,1]$, and when $y = x_i$ then declares $I < i$ if and only if $U < U_i$.)
 #
@@ -2094,7 +2096,7 @@ smcp3_result = localization_sis_plus_grid_rejuv(
 # %% [markdown]
 # ## Exercise 6
 #
-# The SMCP3 rejuvenation's backward proposal simply guessed reverse grid indices from the prior over that robot step.  According to the theory, one should get more accurate results by instead guessing reverse grid indices from the posterior over that robot step, conditional on the information that the forward proposal sent the pose to the given one.  **Code up** this backwards proposal and comment on its efficacy versus efficiency.  Why might it not give much better results?  (Hint: the sensor noise model is Gaussian, which is self-conjugate.)
+# The SMCP3 rejuvenation's backward proposal simply guessed reverse grid indices from the prior over that robot step.  According to the theory, one should get more accurate results by instead guessing reverse grid indices from the posterior over that robot step, conditional on the information that the forward proposal sent the pose to the given one.  **Code up** this backwards proposal and comment on its efficacy versus efficiency.  Why might it not give much better results?
 
 # %%
 # Complete Exercise 6 here
