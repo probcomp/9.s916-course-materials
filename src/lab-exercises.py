@@ -603,12 +603,12 @@ def camera_widget(
             )
             & Plot.html(
                 Plot.js(
-                    """`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`"""
+                    """`camera = Pose([${Array.from($state.camera.p, (x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`"""
                 )
             )
             & Plot.html(
                 Plot.js("""$state.target_exists ?
-                                `target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
+                                `target = Pose([${Array.from($state.target.p, (x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
             )
             & bottom_elements
         )
@@ -1281,7 +1281,7 @@ def localization_sis_plus_grid_rejuv(
 # Plot.html("Click-drag on pose to change location.  Shift-click-drag on pose to change heading.") | (
 #     world_plot
 #     + pose_widget("pose", some_pose, color="blue")
-# ) | Plot.html(js("`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
+# ) | Plot.html(js("`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
 
 # some_poses = jax.vmap(random_pose)(jax.random.split(key, 20))
 # (
@@ -1300,7 +1300,7 @@ def localization_sis_plus_grid_rejuv(
 #         + plot_sensors(js("$state.pose"), js("$state.pose_readings"), sensor_angles, show_legend=True)
 #         + pose_widget("pose", some_pose, color="blue")
 #     )
-#     | Plot.html(js("`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
+#     | Plot.html(js("`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
 #     | Plot.initialState({
 #         "pose_readings": ideal_sensor(some_pose)
 #     })
@@ -1335,7 +1335,7 @@ def localization_sis_plus_grid_rejuv(
 #         + pose_widget("pose", some_pose, color="blue")
 #     )
 #     | noise_slider("noise_slider", "Sensor noise =", model_sensor_noise)
-#     | Plot.html(js("`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
+#     | Plot.html(js("`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"))
 #     | Plot.initialState({
 #         "k": jax.random.key_data(k1),
 #         "pose_readings": noisy_sensor(k2, some_pose, model_sensor_noise)
@@ -1432,8 +1432,8 @@ def localization_sis_plus_grid_rejuv(
 #             ],
 #             "show target pose"
 #         ])
-#         & Plot.html(js("`guess = Pose([${$state.guess.p.map((x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"))
-#         & Plot.html(js("`target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"))
+#         & Plot.html(js("`guess = Pose([${Array.from($state.guess.p, (x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"))
+#         & Plot.html(js("`target = Pose([${Array.from($state.target.p, (x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"))
 #     )
 #     | Plot.initialState(
 #         {
@@ -1507,7 +1507,7 @@ def localization_sis_plus_grid_rejuv(
 #         Plot.html(
 #             # For some reason `toFixed` very stubbonrly malfunctions in the following line:
 #             Plot.js("""$state.target_exists ?
-#                                 `best = Pose([${$state.best.p.map((x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
+#                                 `best = Pose([${Array.from($state.best.p, (x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
 #         )
 #     ),
 #     initial_state={
@@ -1633,7 +1633,7 @@ def localization_sis_plus_grid_rejuv(
 #         + pose_widget("start", robot_inputs["start"], color=Plot.constantly("start pose"))
 #         + Plot.color_map({"start pose": "blue", "path from integrating controls (UNphysical)": "green"})
 #     )
-#     | Plot.html(js("`start = Pose([${$state.start.p.map((x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"))
+#     | Plot.html(js("`start = Pose([${Array.from($state.start.p, (x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"))
 #     | Plot.initialState({
 #         "path": integrate_controls_unphysical(robot_inputs)
 #     })
@@ -1652,7 +1652,7 @@ def localization_sis_plus_grid_rejuv(
 #         + pose_widget("start", robot_inputs["start"], color=Plot.constantly("start pose"))
 #         + Plot.color_map({"start pose": "blue", "path from integrating controls (physical)": "green"})
 #     )
-#     | Plot.html(js("`start = Pose([${$state.start.p.map((x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"))
+#     | Plot.html(js("`start = Pose([${Array.from($state.start.p, (x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"))
 #     | Plot.initialState({
 #         "path": integrate_controls_physical(robot_inputs)
 #     })
