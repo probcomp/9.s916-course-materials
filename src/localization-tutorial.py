@@ -343,7 +343,7 @@ some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
     )
     | Plot.html(
         js(
-            "`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
+            "`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
         )
     )
 )  # fmt: skip
@@ -504,7 +504,7 @@ some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
     )
     | Plot.html(
         js(
-            "`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
+            "`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
         )
     )
     | Plot.initialState({"pose_readings": ideal_sensor(some_pose)})
@@ -652,7 +652,7 @@ some_pose = Pose(jnp.array([6.0, 15.0]), jnp.array(0.0))
     | noise_slider("noise_slider", "Sensor noise =", model_sensor_noise)
     | Plot.html(
         js(
-            "`pose = Pose([${$state.pose.p.map((x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
+            "`pose = Pose([${Array.from($state.pose.p, (x) => x.toFixed(2))}], ${$state.pose.hd.toFixed(2)})`"
         )
     )
     | Plot.initialState(
@@ -822,12 +822,12 @@ def on_target_pose_chage(widget, _):
         )
         & Plot.html(
             js(
-                "`guess = Pose([${$state.guess.p.map((x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"
+                "`guess = Pose([${Array.from($state.guess.p, (x) => x.toFixed(2))}], ${$state.guess.hd.toFixed(2)})`"
             )
         )
         & Plot.html(
             js(
-                "`target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"
+                "`target = Pose([${Array.from($state.target.p, (x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})`"
             )
         )
     )
@@ -1070,12 +1070,12 @@ def camera_widget(
             )
             & Plot.html(
                 Plot.js(
-                    """`camera = Pose([${$state.camera.p.map((x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`"""
+                    """`camera = Pose([${Array.from($state.camera.p, (x) => x.toFixed(2))}], ${$state.camera.hd.toFixed(2)})`"""
                 )
             )
             & Plot.html(
                 Plot.js("""$state.target_exists ?
-                                `target = Pose([${$state.target.p.map((x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
+                                `target = Pose([${Array.from($state.target.p, (x) => x.toFixed(2))}], ${$state.target.hd.toFixed(2)})` : ''""")
             )
             & bottom_elements
         )
@@ -1163,7 +1163,7 @@ camera_widget(
         Plot.html(
             # For some reason `toFixed` very stubbonrly malfunctions in the following line:
             Plot.js("""$state.target_exists ?
-                                `best = Pose([${$state.best.p.map((x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
+                                `best = Pose([${Array.from($state.best.p, (x) => x.toFixed(2))}], ${$state.best.hd.toFixed(2)})` : ''""")
         )
     ),
     initial_state={
@@ -1457,7 +1457,7 @@ def update_unphysical_path(widget, _):
     )
     | Plot.html(
         js(
-            "`start = Pose([${$state.start.p.map((x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"
+            "`start = Pose([${Array.from($state.start.p, (x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"
         )
     )
     | Plot.initialState({"path": integrate_controls_unphysical(robot_inputs)})
@@ -1570,7 +1570,7 @@ def update_physical_path(widget, _):
     )
     | Plot.html(
         js(
-            "`start = Pose([${$state.start.p.map((x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"
+            "`start = Pose([${Array.from($state.start.p, (x) => x.toFixed(2))}], ${$state.start.hd.toFixed(2)})`"
         )
     )
     | Plot.initialState({"path": integrate_controls_physical(robot_inputs)})
